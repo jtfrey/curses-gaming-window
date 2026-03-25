@@ -1,0 +1,343 @@
+/**
+ * @file CGWUtil.h
+ * @brief Curses Gaming Window, Library configuration
+ * 
+ * A header file that pulls-in a number of baseline header files
+ * and declares fundamental constants/macros for the library.
+ *
+ */
+ 
+#ifndef __CGWCONFIG_H__
+#define __CGWCONFIG_H__
+
+#include <curses.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdarg.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <math.h>
+
+/**
+ * Which OS is this?
+ */
+#cmakedefine CGW_OS_MACOSX
+#cmakedefine CGW_OS_LINUX
+#if ! defined(CGW_OS_MACOSX) && ! defined(CGW_OS_LINUX)
+#   error No OS configured
+#endif
+
+/**
+ * Bit depth of an int
+ * Bit depth detected by CMake for standard C int type.
+ */
+#define INT_SIZE_BITS @INT_SIZE_BITS@
+
+/**
+ * Bit depth of a short int
+ * Bit depth detected by CMake for standard C short int type.
+ */
+#define SHORT_INT_SIZE_BITS @SHORT_INT_SIZE_BITS@
+
+/**
+ * Bit depth of a long int
+ * Bit depth detected by CMake for standard C long int type.
+ */
+#define LONG_INT_SIZE_BITS @LONG_INT_SIZE_BITS@
+
+/**
+ * Minimum bit depth for the CGWBitvector type
+ * Bit vectors will use an integer type with capacity for at
+ * least this many bits.
+ */
+#define CGW_BITVECTOR_MIN_BITS @CGW_BITVECTOR_MIN_BITS@
+
+/**
+ * Nominal bit depth for the CGWBitvector type
+ * Given the minimum bit depth, \ref CGW_BITVECTOR_MIN_BITS,
+ * selects the appropriate size from {8, 16, 32, 64}.
+ */
+#if CGW_BITVECTOR_MIN_BITS > 64
+#   error CGW_BITVECTOR_MIN_BITS cannot exceed 64
+#elif CGW_BITVECTOR_MIN_BITS > 32
+#   define CGW_BITVECTOR_BITS 64
+#elif CGW_BITVECTOR_MIN_BITS > 16
+#   define CGW_BITVECTOR_BITS 32
+#elif CGW_BITVECTOR_MIN_BITS > 8
+#   define CGW_BITVECTOR_BITS 16
+#else
+#   define CGW_BITVECTOR_BITS 8
+#endif
+
+/**
+ * Activation threshold for optimized patterned memory fills
+ * When filling regions of memory with a pattern larger than a single
+ * byte, this value triggers the use of optimized combinations of
+ * explicit loops versus calls to \ref memcpy().
+ */
+#define CGWMEMFILL_INITIAL_THRESHOLD_BYTES @CGWMEMFILL_INITIAL_THRESHOLD_BYTES@
+
+/**
+ * Bit depth of a pixel
+ * This API represents pixels as indices into color tables.  The
+ * number of bits used to represent each pixel determines how
+ * many colors are possible in an image.
+ *
+ * The original NES used 2 bpp (bits-per-pixel), so that's our
+ * default.  This API is not restricted to that depth, so
+ * compiling with a different value of CGW_BITS_PER_PIXEL will
+ * alter the behavior.  However, the API will NOT work properly
+ * for bpp values that do not evenly divide \ref CGW_PACKED_PIXELS_BITS.
+ */
+#define CGW_BITS_PER_PIXEL @CGW_BITS_PER_PIXEL@
+
+/**
+ * Count of pixels in a packed sequence
+ * The chosen \ref CGW_BITS_PER_PIXEL and \ref CGWPackedPixels type
+ * determine how many pixels fit in the packed representation.  E.g.
+ * a 32b \ref CGWPackedPixels and \ref CGW_BITS_PER_PIXEL of 2 can fit
+ * 16 pixels per packed word.
+ */
+#undef CGW_PIXELS_PER_ATOM
+
+/**
+ * The bit-width of words into which pixels are packed
+ * Pixels are packed into words that the native CPU can
+ * hold in registers and do basic arithmetic and bitwise
+ * operations.
+ */
+#define CGW_PACKED_PIXELS_BITS @CGW_PACKED_PIXELS_BITS@
+#ifndef CGW_PACKED_PIXELS_BITS
+#   ifdef __WORD_SIZE
+#       define CGW_PACKED_PIXELS_BITS __WORD_SIZE
+#   else
+#       define CGW_PACKED_PIXELS_BITS 32
+#   endif
+#endif
+#if CGW_PACKED_PIXELS_BITS == 8
+#   define CGW_PACKED_PIXELS_TYPE   uint8_t
+#   if CGW_BITS_PER_PIXEL == 1
+#       define CGW_PIXELS_PER_ATOM 8
+#   elif CGW_BITS_PER_PIXEL == 2
+#       define CGW_PIXELS_PER_ATOM 4
+#   elif CGW_BITS_PER_PIXEL == 4
+#       define CGW_PIXELS_PER_ATOM 2
+#   elif CGW_BITS_PER_PIXEL == 8
+#       define CGW_PIXELS_PER_ATOM 1
+#   else
+#       error "Invalid CGW_PACKED_PIXELS_BITS vs. CGW_BITS_PER_PIXEL"
+#   endif
+#elif CGW_PACKED_PIXELS_BITS == 16
+#   define CGW_PACKED_PIXELS_TYPE   uint16_t
+#   if CGW_BITS_PER_PIXEL == 1
+#       define CGW_PIXELS_PER_ATOM 16
+#   elif CGW_BITS_PER_PIXEL == 2
+#       define CGW_PIXELS_PER_ATOM 8
+#   elif CGW_BITS_PER_PIXEL == 4
+#       define CGW_PIXELS_PER_ATOM 4
+#   elif CGW_BITS_PER_PIXEL == 8
+#       define CGW_PIXELS_PER_ATOM 2
+#   elif CGW_BITS_PER_PIXEL == 16
+#       define CGW_PIXELS_PER_ATOM 1
+#   else
+#       error "Invalid CGW_PACKED_PIXELS_BITS vs. CGW_BITS_PER_PIXEL"
+#   endif
+#elif CGW_PACKED_PIXELS_BITS == 32
+#   define CGW_PACKED_PIXELS_TYPE   uint32_t
+#   if CGW_BITS_PER_PIXEL == 1
+#       define CGW_PIXELS_PER_ATOM 32
+#   elif CGW_BITS_PER_PIXEL == 2
+#       define CGW_PIXELS_PER_ATOM 16
+#   elif CGW_BITS_PER_PIXEL == 4
+#       define CGW_PIXELS_PER_ATOM 8
+#   elif CGW_BITS_PER_PIXEL == 8
+#       define CGW_PIXELS_PER_ATOM 4
+#   elif CGW_BITS_PER_PIXEL == 16
+#       define CGW_PIXELS_PER_ATOM 2
+#   elif CGW_BITS_PER_PIXEL == 32
+#       define CGW_PIXELS_PER_ATOM 1
+#   else
+#       error "Invalid CGW_PACKED_PIXELS_BITS vs. CGW_BITS_PER_PIXEL"
+#   endif
+#elif CGW_PACKED_PIXELS_BITS == 64
+#   define CGW_PACKED_PIXELS_TYPE   uint64_t
+#   if CGW_BITS_PER_PIXEL == 1
+#       define CGW_PIXELS_PER_ATOM 64
+#   elif CGW_BITS_PER_PIXEL == 2
+#       define CGW_PIXELS_PER_ATOM 32
+#   elif CGW_BITS_PER_PIXEL == 4
+#       define CGW_PIXELS_PER_ATOM 16
+#   elif CGW_BITS_PER_PIXEL == 8
+#       define CGW_PIXELS_PER_ATOM 8
+#   elif CGW_BITS_PER_PIXEL == 16
+#       define CGW_PIXELS_PER_ATOM 4
+#   elif CGW_BITS_PER_PIXEL == 32
+#       define CGW_PIXELS_PER_ATOM 2
+#   elif CGW_BITS_PER_PIXEL == 64
+#       define CGW_PIXELS_PER_ATOM 1
+#   else
+#       error "Invalid CGW_PACKED_PIXELS_BITS vs. CGW_BITS_PER_PIXEL"
+#   endif
+#else
+#   error Invalid CGW_PACKED_PIXELS_BITS
+#endif
+
+#if CGW_BITS_PER_PIXEL > CGW_PACKED_PIXELS_BITS
+#   error Bit-depth of a single pixel cannot exceed the CGWPackedPixel bit-depth!
+#endif
+#if (CGW_PACKED_PIXELS_BITS % CGW_BITS_PER_PIXEL) != 0
+#   error CGWPackedPixel bit-depth must be a multiple of bit-depth of a single pixel!
+#endif
+
+/**
+ * Bit depth of a palette index
+ * Having a single large color palette implies a large bpp would be
+ * necessary for images.  If the overall image can be broken into smaller
+ * sub-images that use a limited number of colors, then the bpp can be
+ * reduced.  To do this, each sub-image may need a unique color palette
+ * associated with it.  The number of bits-per-palette (bpp) determines
+ * how many palettes can be referenced by the sub-images.
+ *
+ * The original NES used 3 bpP (bits-per-Palette), so that's our
+ * default.  This API is not restricted to that depth, so
+ * compiling with a different value of CGW_BITS_PER_PALETTE will
+ * alter the behavior.  However, the palette index will eventually be
+ * embedded in the tile attribute, so the larger the \ref CGW_BITS_PER_PALETTE
+ * the larger each tile reference will become.
+ */
+#define CGW_BITS_PER_PALETTE @CGW_BITS_PER_PALETTE@
+
+/**
+ * Should tile pixel iterators maintain pixel coordinates?
+ * As a tile's pixels are iterated, the code will by-default maintain
+ * the (x, y) coordinate of the pixel that was iterated.  If this
+ * data is unnecessary, that additional overhead can be cut by
+ * defining this macro.
+ */
+#cmakedefine CGW_TILE_ITERATOR_NO_COORDS
+
+/**
+ * Should tile map iterators maintain grid coordinates?
+ * As a tile map's cells are iterated, the code will by-default maintain
+ * the (x, y) coordinate of the cell that was iterated.  If this
+ * data is unnecessary, that additional overhead can be cut by
+ * defining this macro.
+ */
+#cmakedefine CGW_TILEMAP_ITERATOR_NO_COORDS
+
+/**
+ * Pixel width of the base graphics tile
+ * The fundamental sub-image used in this API is this many pixels wide.  
+ *
+ * The original NES used 8-pixel wide tiles, so that's our default.  This
+ * API is not restricted to that width, so compiling with a different value of
+ * CGW_BASE_TILE_WIDTH will alter the behavior.  However, the value must
+ * evenly-divide \ref CGW_PACKED_PIXELS_BITS.
+ *
+ * If \ref CGW_BASE_TILE_WIDTH times \ref CGW_BASE_TILE_HEIGHT is not a
+ * multiple of \ref CGW_PACKED_PIXELS_BITS, there will be unused bits in the
+ * packed bits.
+ */
+#define CGW_BASE_TILE_WIDTH @CGW_BASE_TILE_WIDTH@
+
+/**
+ * Pixel height of the base graphics tile
+ * The fundamental sub-image used in this API is this many pixels tall.  
+ *
+ * The original NES used 8-pixel tall tiles, so that's our default.  This
+ * API is not restricted to that width, so compiling with a different value of
+ * CGW_BASE_TILE_HEIGHT will alter the behavior.
+ *
+ * If \ref CGW_BASE_TILE_WIDTH times \ref CGW_BASE_TILE_HEIGHT is not a
+ * multiple of \ref CGW_PACKED_PIXELS_BITS, there will be unused bits in the
+ * packed bits.
+ */
+#define CGW_BASE_TILE_HEIGHT @CGW_BASE_TILE_HEIGHT@
+
+/**
+ * Number of base tiles horizontally in a meta tile
+ * A meta tile is a 2D array of base tiles.
+ *
+ * Super Mario Bros. on the original NES used a 2x2 meta tile for the
+ * background:  a question mark block was treated as a singular entity
+ * composed of four 8x8-pixel base tiles.  This API defaults to a meta
+ * tile width of two (2) base tiles.  Compiling with a different value of
+ * CGW_META_TILE_WIDTH will alter the behavior.
+ */
+#define CGW_META_TILE_WIDTH @CGW_META_TILE_WIDTH@
+
+/**
+ * Number of base tiles horizontally in a meta tile
+ * A meta tile is a 2D array of base tiles.
+ *
+ * Super Mario Bros. on the original NES used a 2x2 meta tile for the
+ * background:  a question mark block was treated as a singular entity
+ * composed of four 8x8-pixel base tiles.  This API defaults to a meta
+ * tile height of two (2) base tiles.  Compiling with a different value of
+ * CGW_META_TILE_HEIGHT will alter the behavior.
+ */
+#define CGW_META_TILE_HEIGHT @CGW_META_TILE_HEIGHT@
+
+/**
+ * Maximum bit-depth of tile tables
+ * Tile tables are variable-length arrays.  Rather than automatically
+ * use e.g. a 32-bit integer index, this macro limits the table size
+ * to effectively limit the stored integer size for indices.
+ */
+#define CGW_TILE_TABLE_MAX_INDEX_BITS @CGW_TILE_TABLE_MAX_INDEX_BITS@
+
+/**
+ * Maximum number of tiles based on index limit
+ * The \ref CGW_TILE_TABLE_INDEX_MAX_BITS limits the number of tile
+ * in a table to this value.
+ */
+#define CGW_TILE_TABLE_MAX_INDEX (1 << CGW_TILE_TABLE_MAX_INDEX_BITS)
+
+/**
+ * Maximum bit-depth of graphics attributes
+ * Reserve this many bits for graphics attributes.  Must be at least as 
+ * big as \ref CGW_BITS_PER_PALETTE.
+ */
+#define CGW_ATTR_BITS @CGW_ATTR_BITS@
+#if CGW_ATTR_BITS < CGW_BITS_PER_PALETTE
+#   error CGW_ATTR_BITS is smaller than CGW_BITS_PER_PALETTE
+#endif
+
+/**
+ * Do not perform checks on fixed-precision arithmetic operations
+ * Enabling this flag prevents the fixed-point mathematics functions
+ * from doing bounds checks, overflow/underflow checks, etc.  The
+ * resulting operations are much faster, but may not produce
+ * accurate results.
+ */
+#cmakedefine CGW_FIXEDPREC_FASTMATH
+
+/**
+ * Number of bits to use for fractional component
+ * For fixed-precision numbers, this many bits are to be used to
+ * represent the fractional portion of a number.
+ */
+#define CGW_FIXEDPREC_FRAC_BITS @CGW_FIXEDPREC_FRAC_BITS@
+
+/**
+ * Number of bits to use for whole component
+ * For fixed-precision numbers, this many bits are to be used to
+ * represent the whole portion of a number.
+ */
+#define CGW_FIXEDPREC_WHOLE_BITS @CGW_FIXEDPREC_WHOLE_BITS@
+
+/**
+ * Minimum fixed-precision bits required
+ * A fixed-precision value will need a sign bit and the number
+ * of whole and fractional bits requested.
+ */
+#define CGW_FIXEDPREC_MIN_BITS (1 + CGW_FIXEDPREC_FRAC_BITS + CGW_FIXEDPREC_WHOLE_BITS)
+#if CGW_FIXEDPREC_MIN_BITS > 64
+#   error Too many bits for fixed-precision type.
+#endif
+
+#endif /* __CGWCONFIG_H__ */
