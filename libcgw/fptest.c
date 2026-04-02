@@ -3,6 +3,7 @@
 #include <float.h>
 
 #include "CGWFixedPrec.h"
+#include "CGWGeom.h"
 
 int
 main()
@@ -132,5 +133,59 @@ main()
     printf("%ld = 0x%016lX = " CGW_FIXEDPREC_FMT " (%d)\n", sli, sli, (pi = CGWFixedPrecCreateWithLongInt(sli)), cgw_fperrno);
     printf("   = %f\n\n", CGWFixedPrecToFloat(pi));
     
+    CGWPointFP      p1 = CGWPointFPMake(-2.25, 0.75);
+    
+    printf("p               = <(%d) + (" CGW_FIXEDPREC_FMT "), (%d) + (" CGW_FIXEDPREC_FMT ") = <%f, %f>\n",
+            p1.whole.x, p1.fx, p1.whole.y, p1.fy, 
+            (double)p1.whole.x + CGWFixedPrecToDouble(p1.fx),
+            (double)p1.whole.y + CGWFixedPrecToDouble(p1.fy));
+    
+    CGWPointFPTranslateWhole(&p1, 5, -2);
+    printf("p + <5, -2>     = <(%d) + (" CGW_FIXEDPREC_FMT "), (%d) + (" CGW_FIXEDPREC_FMT ") = <%f, %f>\n\n",
+            p1.whole.x, p1.fx, p1.whole.y, p1.fy, 
+            (double)p1.whole.x + CGWFixedPrecToDouble(p1.fx),
+            (double)p1.whole.y + CGWFixedPrecToDouble(p1.fy));
+    
+    int     i, r;
+    
+    for ( i = 0; i < 40; i++ ) printf("Sqrt(%d) = %d (frac %d)\n", i, CGWSqrtInt(i, &r), r);
+    printf("\n");
+    
+    CGWCircle       c = CGWCircleMake(0, 0, 3);
+    
+    for ( i = 0; i < 5; i++ )
+        printf("(%1$d, %1$d) in c = %2$d\n", i, CGWCircleContainsPoint(c, CGWPointMake(i, i)));
+    printf("\n");
+    
+    CGWCircle       c2 = CGWCircleMake(0, 0, 1);
+    
+    for ( i = 5; i > 0; i-- ) {
+        c2.origin.x = c2.origin.y = i;
+        printf("{(%d,%d) r=%d} overlap {(%d,%d) r=%d} => %d\n", 
+            c.origin.x, c.origin.y, c.radius,
+            c2.origin.x, c2.origin.y, c2.radius,
+            CGWCircleOverlapsCircle(c, c2));
+    }
+    printf("\n");
+    c2.origin.y = 0;
+    for ( i = 5; i > 0; i-- ) {
+        c2.origin.x = i;
+        printf("{(%d,%d) r=%d} overlap {(%d,%d) r=%d} => %d\n", 
+            c.origin.x, c.origin.y, c.radius,
+            c2.origin.x, c2.origin.y, c2.radius,
+            CGWCircleOverlapsCircle(c, c2));
+    }
+    printf("\n");
+    
+    CGWRect     R = CGWRectMake(4, 4, 2, 4);   /* (4, 4) -> (6, 4) -> (6, 8) -> (4, 8) */
+    c = CGWCircleMake(0, 0, 2);
+    for ( i = 0; i < 13; i++ ) {
+        c.origin.x = c.origin.y = i;
+        printf("{(%d,%d) r=%d} overlap {(%d,%d) x (%u,%u)} => %d\n", 
+            c.origin.x, c.origin.y, c.radius,
+            R.origin.x, R.origin.y, R.size.w, R.size.h,
+            CGWCircleOverlapsRect(c, R));
+    }
+    printf("\n");
     return 0;
 }

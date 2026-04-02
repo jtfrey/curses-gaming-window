@@ -130,6 +130,24 @@ typedef uint64_t CGWUFixedPrec;
 #endif
 
 /**
+ * Is the fixed precision value positive?
+ * Returns boolean true if \p FP is a positive value.
+ *
+ * Zero is a positive value in this API.
+ * @param FP        the fixed precision value to test
+ * @return          boolean true if positive, false otherwise
+ */
+#define CGWFixedPrecIsPos(FP)   (((FP) & (CGWFixedPrecOne << CGW_FIXEDPREC_SIGBITS)) == 0)
+
+/**
+ * Is the fixed precision value negative?
+ * Returns boolean true if \p FP is a negative value.
+ * @param FP        the fixed precision value to test
+ * @return          boolean true if negative, false otherwise
+ */
+#define CGWFixedPrecIsNeg(FP)   (((FP) & (CGWFixedPrecOne << CGW_FIXEDPREC_SIGBITS)) != 0)
+
+/**
  * The largest positive whole value
  * The maximum positive whole value that a CGWFixedPrec can
  * represent.

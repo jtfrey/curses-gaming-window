@@ -125,7 +125,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Create the library target:
 set(LIBCGW_SOURCES
-        CGWUtil.c CGWGeom.c CGWFixedPrec.c CGWStats.c CGWDecoder.c CGWCurses.c
+        CGWUtil.c CGWMath.c CGWGeom.c CGWFixedPrec.c CGWStats.c CGWDecoder.c CGWCurses.c
         CGWColor.c CGWPalette.c CGWPaletteTable.c CGWPaletteTableArray.c
         CGWTile.c CGWTileTable.c CGWMetaTileTable.c CGWTileMap.c
         CGWPixelBuffer.c CGWCompositePixelBuffer.c
@@ -147,5 +147,5 @@ target_include_directories(cgw PRIVATE ${CURSES_INCLUDE_DIR})
 
 # Create the library target:
 add_executable(fptest
-        CGWUtil.c CGWFixedPrec.c
+        CGWUtil.c CGWMath.c CGWFixedPrec.c CGWGeom.c
         fptest.c)

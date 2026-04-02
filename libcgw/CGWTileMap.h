@@ -29,7 +29,7 @@ enum {
     kCGWTileMapOptionsTileTableTypeMeta         = 1,        /*!< the map references a CGWMetalTileTable */
     kCGWTileMapOptionsTileTableTypeMask         = 0b11,     /*!< the lowest two bits are reserved for the type of
                                                                  tiles referenced */
-    kCGWTileMapOptionsShouldDestroyTileTable    = (1 << 2),        /*!< set if the tile table should be destroyed when
+    kCGWTileMapOptionsShouldDestroyTileTable    = (1 << 2), /*!< set if the tile table should be destroyed when
                                                                  this tile map is destroyed */
                                                              
     kCGWTileMapOptionsMask = kCGWTileMapOptionsTileTableTypeMask |

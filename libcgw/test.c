@@ -30,6 +30,7 @@ enum {
     kControlJump,
     kControlRun,
     kControlQuit,
+    kControlPalette,
     kControlMax
 };
 
@@ -47,6 +48,7 @@ static CGWControlBinding game_control_bindings[] = {
             CGWControlBindingInit('a',          kControlRun),
             CGWControlBindingInit('q',          kControlQuit),
             CGWControlBindingInit(AUX_KEY_ESC,  kControlQuit),
+            CGWControlBindingInit('p',          kControlPalette),
             CGWControlBindingEndOfList()
         };
 
@@ -420,7 +422,7 @@ main()
                     if ( pixbuf ) {
                         CGWPixelBufferIterator  piter;
                         CGWTimingInterval       engine_timer = CGWTimingIntervalMakeWithFrequency(60.0);
-                        bool                    is_running = true, should_redraw = true, should_draw = true;
+                        bool                    is_running = true, should_redraw = false, should_draw = true;
                         int                     x, y;
                         int                     palette = 0;
                         int                     pair_base = CGWPaletteTableMapToPairBase(palette);
@@ -463,7 +465,12 @@ main()
 #endif
                                     is_running = false;
                                 } else {
-                                    if ( CGWControlsStatesGet(game_controls_states, kControlJump) == kCGWControlStatePressed ) {
+                                    if ( CGWControlsStatesGet(game_controls_states, kControlPalette) == kCGWControlStatePressed ) {
+                                        palette = (palette + 1) % CGW_PALETTES_PER_TABLE;
+                                        pair_base = CGWPaletteTableMapToPairBase(palette);
+                                        should_redraw = should_draw = true;
+                                    }
+                                    else if ( CGWControlsStatesGet(game_controls_states, kControlJump) == kCGWControlStatePressed ) {
 #ifdef EVENT_LOGGING
                                         fprintf(logfptr, "%16.2f[%d]: %s FOREGROUND\n", now, kCGWControlStatePressed, CGWCompositePixelBufferLayerGetEnabled(pixbuf, 0) ? "DISABLE" : "ENABLE");
 #endif
@@ -506,6 +513,18 @@ main()
                                             pixbuf->layers[0].display_rect.origin.x++;
                                             should_draw = true;
                                         }
+                                    }
+                                }
+                                if ( should_redraw ) {
+                                    CGWPixelBufferIteratorInit(foreground, CGWPointMake(0, 0), piter);
+                                    for ( y = 0; y < foreground_size.h; y++ ) {
+                                        for ( x = 0; x < foreground_size.w; x++ ) {
+                                            int     c = (((foreground_size.h) - 1 - y) == (x / 6 + 12)) ? 1 : 
+                                                            ((((foreground_size.h) - 1 - y) == (x * x / 192)) ? 2 : 3);
+                                            
+                                            CGWPixelBufferIteratorSetNextCh(piter, (c == 3) ? CGWTransparentChar : (' ' | COLOR_PAIR(pair_base + c)));
+                                        }
+                                        CGWPixelBufferIteratorNextLine(piter);
                                     }
                                 }
                                 if ( should_draw ) {

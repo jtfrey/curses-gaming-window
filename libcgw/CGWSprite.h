@@ -12,13 +12,78 @@
 
 #include "CGWGeom.h"
 #include "CGWAttr.h"
+#include "CGWBitvector.h"
 #include "CGWTileTable.h"
+
+/**
+ * A sprite template
+ * Each sprite is constructed of a 2D array of underlying
+ * tiles.  There may be multiple instances of a sprite
+ * on-screen, so rather than duplicate the tile data an
+ * immutable template holds all fields that are common
+ * to each instance.
+ */
+typedef struct  __attribute__((packed))  {
+    const char          *name;      /*!< optional name for the sprite; useful for debugging */
+    CGWSize             tile_dims;  /*!< the tile dimensions of the sprite; the product w * h
+                                         is the number of items in the \p tiles list */
+    CGWTileTableIndex   tiles[];    /*!< the tile array in row-major ordering */
+} CGWSpriteTmpl;
+/**
+ * Reference to a sprite template
+ * Since sprite templates are always dynamically-allocated, a
+ * reference (pointer) is used when working with it.
+ */
+typedef CGWSpriteTmpl * CGWSpriteTmplRef;
+
+
+typedef struct CGWSprite * CGWSpriteRef;
+
+enum {
+    kCGWSpriteIsImmutable               = (1 << 0)
+};
+
+typedef void (*CGWSpriteKeyframeCallback)(CGWSpriteRef the_sprite);
+typedef bool (*CGWSpriteHitDetectCallback)(CGWSpriteRef the_sprite, CGWPoint );
+
+/**
+ * A sprite instance
+ * A sprite is instantiated for display on-screen as an
+ * object of this type.  The instance includes a reference
+ * to the template object and coordinate data.
+ *
+ * Instances can be mutable or immutable w.r.t. the parent
+ * template.  Immutable instances reference the template's
+ * tile array, whereas mutable instances include their own
+ * copy the template's tile array.  The goombas in SMB 1
+ * were animated in coordinate fashion; this would be
+ * accomplished by using immutable instances and modifying
+ * the template.  Using mutable instances would allow each
+ * goomba to be animated independently.
+ */
+typedef struct CGWSprite {
+    CGWSpriteTmplRef    tmpl;           /*!< parent template for this instance */
+    CGWBitvector        options;        /*!< behavioral options */
+    const char          *name;          /*!< optional name for the sprite; useful for debugging */
+    CGWPointFP          origin;         /*!< screen coordinate at which the sprite starts being
+                                             drawn */
+    CGWRect             hit_box;        /*!< the pixel area within the sprite that is used for hit
+                                             detection */
+    CGWAttr             *attrs;
+    CGWTileTableIndex   *tiles;         /*!< pointer to the array of tiles; for immutable instances
+                                             this is just a pointer to the template's array */
+    const void          *extra_data;    /*!< 
+} CGWSprite;
+
+
+
+
 
 
 typedef struct {
     CGWTileTableIndex       tile_index;
     CGWAttr                 attributes;
-    CGWPoint                origin;
+    CGWPointFP              origin;
 } CGWSpriteCell;
 
 typedef struct {
