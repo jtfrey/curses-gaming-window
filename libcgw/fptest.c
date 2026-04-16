@@ -2,8 +2,39 @@
 #include <math.h>
 #include <float.h>
 
+#if 0
+
 #include "CGWFixedPrec.h"
 #include "CGWGeom.h"
+#include "CGWCSGeom.h"
+#include "CGWTiming.h"
+
+CGWCSGeomShape hitbox_list[] = {
+                        CGWCSGeomStructAddCircle(-1, 0, 2)
+                        CGWCSGeomStructAddRect(-1, -1, 2, 2)
+                        CGWCSGeomStructAddCircle( 1, 0, 3)
+                        CGWCSGeomStructAddPoint(0, 0)
+                        CGWCSGeomStructAddPoint(0, 1)
+                        CGWCSGeomStructAddPoint(1, 0)
+                        CGWCSGeomStructAddPoint(0,-1)
+                        CGWCSGeomStructAddPoint(-1, 0)
+                        CGWCSGeomStructAddCircle(0, 0, 1)
+                        CGWCSGeomStructAddRect(0, 1, 1, 1)
+                        CGWCSGeomStructAddEndOfList()
+                    };
+
+CGWCSGeom hitbox =  CGWCSGeomStructStart(10)
+                        CGWCSGeomStructAddCircle(-1, 0, 1)
+                        CGWCSGeomStructAddRect(-1, -1, 2, 2)
+                        CGWCSGeomStructAddCircle( 1, 0, 1)
+                        CGWCSGeomStructAddPoint(0, 0)
+                        CGWCSGeomStructAddPoint(0, 1)
+                        CGWCSGeomStructAddPoint(1, 0)
+                        CGWCSGeomStructAddPoint(0,-1)
+                        CGWCSGeomStructAddPoint(-1, 0)
+                        CGWCSGeomStructAddCircle(0, 0, 1)
+                        CGWCSGeomStructAddRect(0, 1, 1, 1)
+                    CGWCSGeomStructEnd();
 
 int
 main()
@@ -187,5 +218,132 @@ main()
             CGWCircleOverlapsRect(c, R));
     }
     printf("\n");
+    
+    printf("initial CGS geom list has %u shapes\n", hitbox.n_shapes);
+    
+    CGWCSGeomRef        cgs_obj = CGWCSGeomCreateWithShapesList(hitbox_list);
+    CGWPoint            p;
+    int                 x, y;
+    
+    printf("hitbox CGS geom list has %u shapes\n", cgs_obj->n_shapes);
+    printf("     ");
+    for ( x = -5; x <= 5; x++ ) printf("%3d", x);
+    printf("\n");
+    for ( y = -5; y <= 5; y++ ) {
+        printf("%3d :", y);
+        for ( x = -5; x <= 5; x++ ) printf(" %c ", CGWCSGeomContainsPoint(cgs_obj, CGWPointMake(x, y)) ? '*' : '.');
+        printf("\n");
+    }
+    printf("\n");
+    
+    CGWTimingInterval   timer = CGWTimingIntervalMake(1.0f);
+    float               f_tot, f_in, f_out;
+    
+    f_in = 1.0f, f_tot = 0.0;
+    CGWTimingIntervalStart(timer);
+    for ( i=0; i < 10000000; i++ ) {
+        f_out = CGWQSqrtF(f_in, 3);
+        f_tot += f_out;
+        f_in += 1.0f;
+    }
+    CGWTimingIntervalStopNow(timer);
+    printf("10000000 calls to CGWQSqrtF(x, 3) = %g took %g µs\n", f_tot, timer.accumulated_time);
+    
+    f_in = 1.0f, f_tot = 0.0;
+    timer = CGWTimingIntervalMake(1.0f);
+    CGWTimingIntervalStart(timer);
+    for ( i=0; i < 10000000; i++ ) {
+        f_out = sqrtf(f_in);
+        f_tot += f_out;
+        f_in += 1.0f;
+    }
+    CGWTimingIntervalStopNow(timer);
+    printf("10000000 calls to sqrtf(x) = %g took %g µs\n", f_tot, timer.accumulated_time);
+
+    f_in = 1.0f, f_tot = 0.0;
+    timer = CGWTimingIntervalMake(1.0f);
+    CGWTimingIntervalStart(timer);
+    for ( i=0; i < 10000000; i++ ) {
+        f_out = CGWQSqrtFAsm(f_in, 3);
+        f_tot += f_out;
+        f_in += 1.0f;
+    }
+    CGWTimingIntervalStopNow(timer);
+    printf("10000000 calls to CGWQSqrtFAsm(x, 3) = %g took %g µs\n", f_tot, timer.accumulated_time);    
+
+
+    CGWPointPSetThetaMin(CGWSizeMake(512, 240));
+
+    CGWPointP       rp;
+    
+    float           theta = 0.5 * M_PI_4;
+    
+    for ( i = -18; i <= 18; i++ ) {
+        rp = CGWPointPMake(5, i * theta), printf("CGWPointPMake(5, %d(π/8)) = { .r=%u, .theta=%g }\n", i, rp.r, rp.theta);
+    }
+
+
+    //
+    //  100000000 calls to CGWPointPThetaClampWithThresholds() = -0.893969 took 474283 µs
+    //  100000000 calls to CGWPointPThetaClampWithThresholdsAsm() = -0.893969 took 343862 µs
+    //
+    double          Theta = -5.25 * M_PI;
+    double          Theta_avg = 0.0;
+    
+    timer = CGWTimingIntervalMake(1.0f);
+    CGWTimingIntervalStart(timer);
+    for ( i=0; i < 100000000; i++ ) {
+        double      Theta_prime = CGWPointPThetaClampWithThresholds(theta, 0.0001, 0.0001);
+        
+        Theta_avg = (i == 0) ? Theta_prime : 0.5 * (Theta_avg + Theta_prime);
+        theta += M_PI_4;
+    }
+    CGWTimingIntervalStopNow(timer);
+    printf("100000000 calls to CGWPointPThetaClampWithThresholds() = %g took %g µs\n", Theta_avg, timer.accumulated_time);
+    
+    Theta = -5.25 * M_PI;
+    Theta_avg = 0.0;
+
+    timer = CGWTimingIntervalMake(1.0f);
+    CGWTimingIntervalStart(timer);
+    for ( i=0; i < 100000000; i++ ) {
+        double      Theta_prime = CGWPointPThetaClampWithThresholdsAsm(theta, 0.0001, 0.0001);
+        
+        Theta_avg = (i == 0) ? Theta_prime : 0.5 * (Theta_avg + Theta_prime);
+        theta += M_PI_4;
+    }
+    CGWTimingIntervalStopNow(timer);
+    printf("100000000 calls to CGWPointPThetaClampWithThresholdsAsm() = %g took %g µs\n", Theta_avg, timer.accumulated_time);
+    
     return 0;
 }
+
+#else
+
+#include "CGWGeom2D.h"
+
+int
+main()
+{
+    CGWXFormMatrix2D        M1, M2, M3;
+    CGWPoint2D              p = CGWPoint2DMake(0.5f, -0.5f);
+    
+    CGWXFormMatrix2D_IJ(M1.M, 0, 0) = 1.0f;
+    CGWXFormMatrix2D_IJ(M1.M, 0, 1) = 2.0f;
+    CGWXFormMatrix2D_IJ(M1.M, 0, 2) = 3.0f;
+    CGWXFormMatrix2D_IJ(M1.M, 1, 0) = 4.0f;
+    CGWXFormMatrix2D_IJ(M1.M, 1, 1) = 5.0f;
+    CGWXFormMatrix2D_IJ(M1.M, 1, 2) = 6.0f;
+    
+    CGWXFormMatrix2DSetIdentity(&M2);
+    
+    CGWXFormMatrix2DDotPoint2D(&p, &M1, &p);
+    printf("<%f, %f>\n", p.x, p.y);
+    
+    CGWXFormMatrix2DScaledSum(&M3, -2.0f, &M2, &M1);
+    printf("[[%f, %f, %f]\n [%f, %f, %f]]\n", M3.M[0], M3.M[1], M3.M[2], M3.M[4], M3.M[5], M3.M[6]);
+    
+    return 0;
+}
+
+#endif

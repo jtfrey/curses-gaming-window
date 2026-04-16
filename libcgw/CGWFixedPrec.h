@@ -82,28 +82,28 @@ typedef uint64_t CGWUFixedPrec;
 #endif
 
 /**
- * Fixed precision zero
+ * Fixed-precision zero
  * The number zero as the fixed-precision type.
  */
 #define CGWFixedPrecZero        ((CGWFixedPrec)0)
 /**
- * Fixed precision one
+ * Fixed-precision one
  * The number one as the fixed-precision type.
  */
 #define CGWFixedPrecOne         ((CGWFixedPrec)((CGWUFixedPrec)1 << CGW_FIXEDPREC_FRAC_BITS))
 /**
- * Fixed precision negative one
+ * Fixed-precision negative one
  * The number negative one as the fixed-precision type.
  */
 #define CGWFixedPrecNegOne      ((CGWFixedPrec)(CGW_FIXEDPREC_MAX << CGW_FIXEDPREC_FRAC_BITS))
 /**
- * Fixed precision two
+ * Fixed-precision two
  * The number two as the fixed-precision type.
  */
 #define CGWFixedPrecTwo         ((CGWFixedPrec)((CGWUFixedPrec)1 << (CGW_FIXEDPREC_FRAC_BITS + 1)))
 #if CGW_FIXEDPREC_FRAC_BITS > 0
 /**
- * Fixed precision one half
+ * Fixed-precision one half
  * The number one half (0.5) as the fixed-precision type.  This
  * macro is only defined if \ref CGW_FIXEDPREC_FRAC_BITS is at
  * least 1 bit.
@@ -111,7 +111,7 @@ typedef uint64_t CGWUFixedPrec;
 #define CGWFixedPrecOneHalf     ((CGWFixedPrec)((CGWUFixedPrec)1 << (CGW_FIXEDPREC_FRAC_BITS - 1)))
 #if CGW_FIXEDPREC_FRAC_BITS > 1
 /**
- * Fixed precision one quarter
+ * Fixed-precision one quarter
  * The number one quarter (0.25) as the fixed-precision type.  This
  * macro is only defined if \ref CGW_FIXEDPREC_FRAC_BITS is at
  * least 2 bits.
@@ -119,7 +119,7 @@ typedef uint64_t CGWUFixedPrec;
 #define CGWFixedPrecOneQuarter  ((CGWFixedPrec)(((CGWUFixedPrec)1 << (CGW_FIXEDPREC_FRAC_BITS - 2))))
 #if CGW_FIXEDPREC_FRAC_BITS > 2
 /**
- * Fixed precision one eighth
+ * Fixed-precision one eighth
  * The number one eighth (0.125) as the fixed-precision type.  This
  * macro is only defined if \ref CGW_FIXEDPREC_FRAC_BITS is at
  * least 3 bits.
@@ -130,22 +130,31 @@ typedef uint64_t CGWUFixedPrec;
 #endif
 
 /**
- * Is the fixed precision value positive?
+ * Isolate the sign bit in a fixed-precision value
+ * Returns the sign bit (in the appropriate bit position) for the
+ * fixed-point value, \p FP.
+ * @param FP        the fixed-precision value
+ * @return          the sign bit for \p FP
+ */
+#define CGWFixedPrecSignBit(FP) ((FP) & (CGWFixedPrecOne << CGW_FIXEDPREC_SIGBITS))
+
+/**
+ * Is the fixed-precision value positive?
  * Returns boolean true if \p FP is a positive value.
  *
  * Zero is a positive value in this API.
- * @param FP        the fixed precision value to test
+ * @param FP        the fixed-precision value to test
  * @return          boolean true if positive, false otherwise
  */
-#define CGWFixedPrecIsPos(FP)   (((FP) & (CGWFixedPrecOne << CGW_FIXEDPREC_SIGBITS)) == 0)
+#define CGWFixedPrecIsPos(FP)   (CGWFixedPrecSignBit(FP) == 0)
 
 /**
- * Is the fixed precision value negative?
+ * Is the fixed-precision value negative?
  * Returns boolean true if \p FP is a negative value.
- * @param FP        the fixed precision value to test
+ * @param FP        the fixed-precision value to test
  * @return          boolean true if negative, false otherwise
  */
-#define CGWFixedPrecIsNeg(FP)   (((FP) & (CGWFixedPrecOne << CGW_FIXEDPREC_SIGBITS)) != 0)
+#define CGWFixedPrecIsNeg(FP)   (CGWFixedPrecSignBit(FP) != 0)
 
 /**
  * The largest positive whole value
@@ -155,7 +164,7 @@ typedef uint64_t CGWUFixedPrec;
 #define CGWFixedPrecMaxWholeComp ((CGWFixedPrec)CGW_FIXEDPREC_MAX >> CGW_FIXEDPREC_FRAC_BITS)
 
 /**
- * Fixed precision error codes
+ * Fixed-precision error codes
  * The fixed-precision functions will set \ref cgw_fperrno in case
  * of error.  It will be set to values from this enumeration.
  */
@@ -825,5 +834,107 @@ CGWFixedPrecMul(
     }
 #endif
 }
+
+/**
+ * Drop the fractional component of the fixed-precision number
+ * E.g. 6.25 => 6.
+ * @param v     a fixed-precision number
+ * @return      the value of \p v with all fractional digits zeroed
+ */
+static inline
+CGWFixedPrec
+CGWFixedPrecTrunc(
+    CGWFixedPrec    v
+)
+{
+    return (v & ~(CGWFixedPrecOne - 1));
+}
+
+/**
+ * Round a fixed-precision number to the nearest integer
+ * E.g. 6.25 => 6 vs. 6.75 => 7.
+ * @param v     a fixed-precision number
+ * @return      the rounded value of \p v
+ */
+static inline
+CGWFixedPrec
+CGWFixedPrecRound(
+    CGWFixedPrec    v
+)
+{
+    CGWFixedPrec    frac = (v & (CGWFixedPrecOne - 1));
+    
+    return (frac >= CGWFixedPrecOneHalf) ?
+                (v & ~(CGWFixedPrecOne - 1)) + (CGWFixedPrecSignBit(v) | CGWFixedPrecOne) :
+                (v & ~(CGWFixedPrecOne - 1));
+}
+
+/**
+ * Round a fixed-precision number to the largest integral value not greater than v
+ * E.g. 6.25 => 6; 6.75 => 6; -6.25 => -7; -6.75 => -7.
+ * @param v     a fixed-precision number
+ * @return      the rounded value of \p v
+ */
+static inline
+CGWFixedPrec
+CGWFixedPrecFloor(
+    CGWFixedPrec    v
+)
+{
+    CGWFixedPrec    trunced = (v & ~(CGWFixedPrecOne - 1));
+    return (trunced > v) ? (trunced - CGWFixedPrecOne) : (trunced);
+}
+
+/**
+ * Round a fixed-precision number to the largest integral value greater than v
+ * E.g. 6.25 => 7; 6.75 => 7; -6.25 => -6; -6.75 => -6.
+ * @param v     a fixed-precision number
+ * @return      the rounded value of \p v
+ */
+static inline
+CGWFixedPrec
+CGWFixedPrecCeil(
+    CGWFixedPrec    v
+)
+{
+    CGWFixedPrec    trunced = (v & ~(CGWFixedPrecOne - 1));
+    return (trunced < v) ? (trunced + CGWFixedPrecOne) : (trunced);
+}
+
+/**
+ * Round a fixed-precision number toward ±∞
+ * E.g. 6.25 => 7; 6.75 => 7; -6.25 => -7; -6.75 => -7.
+ * @param v     a fixed-precision number
+ * @return      the rounded value of \p v
+ */
+static inline
+CGWFixedPrec
+CGWFixedPrecRoundInf(
+    CGWFixedPrec    v
+)
+{
+    // Subtract the fractional part then add one with the
+    // proper sign.
+    CGWFixedPrec    frac = CGWFixedPrecSignBit(v) | (v & (CGWFixedPrecOne - 1));
+    return (v - frac) + (CGWFixedPrecSignBit(v) | CGWFixedPrecOne);
+}
+
+/**
+ * Round a fixed-precision number toward 0
+ * E.g. 6.25 => 6; 6.75 => 6; -6.25 => -6; -6.75 => -6.
+ * @param v     a fixed-precision number
+ * @return      the rounded value of \p v
+ */
+static inline
+CGWFixedPrec
+CGWFixedPrecRoundZero(
+    CGWFixedPrec    v
+)
+{
+    // Subtract the fractional part:
+    CGWFixedPrec    frac = CGWFixedPrecSignBit(v) | (v & (CGWFixedPrecOne - 1));
+    return (v - frac);
+}
+    
 
 #endif /* __CGWFIXEDPREC_H__ */

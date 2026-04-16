@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <limits.h>
 #include <math.h>
 
 /**
@@ -339,5 +340,19 @@
 #if CGW_FIXEDPREC_MIN_BITS > 64
 #   error Too many bits for fixed-precision type.
 #endif
+
+/**
+ * Enable assembly variants of functions?
+ */
+#cmakedefine CGW_ENABLE_ASSEMBLY
+#ifdef CGW_ENABLE_ASSEMBLY
+#   if defined(__APPLE__) && defined(__aarch64__)
+#       define HAVE_APPLE_AARCH64
+#       if defined(__ARM_NEON)
+#           define HAVE_APPLE_AARCH64_NEON
+#       endif
+#   endif
+#endif
+
 
 #endif /* __CGWCONFIG_H__ */

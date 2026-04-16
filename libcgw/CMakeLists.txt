@@ -8,6 +8,7 @@ find_package(Curses REQUIRED)
 #
 if(APPLE)
     set(CGW_OS_MACOSX true)
+    set(CGW_ENABLE_ASSEMBLY 1 CACHE BOOL "Enable optimized assembly functions.")
 elseif(UNIX)
     set(CGW_OS_LINUX true)
 endif()
@@ -125,7 +126,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Create the library target:
 set(LIBCGW_SOURCES
-        CGWUtil.c CGWMath.c CGWGeom.c CGWFixedPrec.c CGWStats.c CGWDecoder.c CGWCurses.c
+        CGWUtil.c CGWMath.c CGWMath.s CGWGeom.c CGWGeom.s CGWCSGeom.c CGWFixedPrec.c CGWStats.c
+        CGWDecoder.c CGWCurses.c
         CGWColor.c CGWPalette.c CGWPaletteTable.c CGWPaletteTableArray.c
         CGWTile.c CGWTileTable.c CGWMetaTileTable.c CGWTileMap.c
         CGWPixelBuffer.c CGWCompositePixelBuffer.c
@@ -147,5 +149,14 @@ target_include_directories(cgw PRIVATE ${CURSES_INCLUDE_DIR})
 
 # Create the library target:
 add_executable(fptest
-        CGWUtil.c CGWMath.c CGWFixedPrec.c CGWGeom.c
+        CGWUtil.c CGWMath.c CGWMath.s CGWFixedPrec.c CGWGeom2D.c CGWGeom2D.s CGWGeom.c CGWGeom.s CGWCSGeom.c
+        CGWTurtle.c
         fptest.c)
+
+
+
+# Create the library target:
+add_executable(turtletest
+        CGWUtil.c CGWMath.c CGWMath.s CGWFixedPrec.c CGWGeom.c CGWGeom.s CGWCSGeom.c
+        CGWTurtle.c
+        turtletest.c)

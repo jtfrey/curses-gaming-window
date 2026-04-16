@@ -57,6 +57,15 @@ typedef CGW_BITVECTOR_TYPE CGWBitvector;
 #define CGWBitvectorOnes (~(CGWBitvector)0U)
 
 /**
+ * Turn a bit index into a bit mask
+ * Yes, it's just a simple bit shift...but it makes the
+ * API a little more readable.
+ * @param I         bit index
+ * @return          mask for \p I
+ */
+#define CGWBitvectorMask(I) ((CGWBitvector)1 << I)
+
+/**
  * Retain only those bits indicated by a mask
  * Sets \p BV to only those bits associated with \p M.
  * @param BV        a CGWBitvector
