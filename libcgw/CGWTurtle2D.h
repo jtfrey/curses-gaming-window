@@ -1,15 +1,15 @@
 /**
- * @file CGWTurtle.h
+ * @file CGWTurtle2D.h
  * @brief Curses Gaming Window, Turtle graphics
  * 
- * A header file that defines an API for turtle graphics.
+ * A header file that defines an API for 2D turtle graphics.
  *
  */
 
-#ifndef __CGWTURTLEH__
-#define __CGWTURTLEH__
+#ifndef __CGWTURTLE2D_H__
+#define __CGWTURTLE2D_H__
 
-#include "CGWGeom.h"
+#include "CGWGeom2D.h"
 #include "CGWMath.h"
 #include "CGWBitvector.h"
 
@@ -62,7 +62,7 @@ enum {
     kGGWTurtleOptionsEnableLoggingMask      = CGWBitvectorMask(kGGWTurtleOptionsEnableLogging), /*!< Bit mask for \ref kGGWTurtleOptionsEnableLogging */
     
     
-    kCGWTurtleOptionsMask                   = kCGWTurtleOptionsBoundsMask      /*!< Bitmask that isolates all user-facing options */
+    kCGWTurtleOptionsMask                   = kCGWTurtleOptionsBoundsMask /*!< Bitmask that isolates all user-facing options */
                                                 | kGGWTurtleOptionsEnableLoggingMask
 };
 
@@ -74,90 +74,13 @@ enum {
 typedef struct CGWTurtle * CGWTurtleRef;
 
 /**
- * Pointer to a function called to draw a pixel
- * When a turtle moves with its stylus down, pixels are generated.  This API does not
- * do any drawing itself:  instead, it calls a function of this type to display the
- * pixels it generates.
- * @param Yertle        the \ref CGWTurtle generating the pixel
- * @param pixel         the location (in world coordinates) of the pixel
- * @param context       user-provided opaque pointer that the callback can use
- *                      for its own data w.r.t. drawing
- */
-typedef void (*CGWTurtleDrawPixelCallback)(CGWTurtleRef Yertle, CGWPoint pixel, const void *context);
-
-/**
- * Pointer to a function that converts turtle coordinates to world coordinate
- * When the turtle generates pixels, it communicates coordinates to the drawing
- * callback in world coordinates -- the coordinate system of the drawing context.
- * A function of this type converts turtle coordinates to a different
- * coordinate system.
- * @param Yertle        the \ref CGWTurtle object
- * @param turtle_coord  the location in turtle coordinates
- * @param context       user-provided opaque pointer that the callback can use
- *                      for its own data w.r.t. drawing
- * @return              the location in world coordinates
- */
-typedef CGWPoint (*CGWTurtleCoordToWorldCallback)(CGWTurtleRef Yertle, CGWPoint turtle_coord, const void *context);
-
-/**
- * Pointer to a function that converts world coordinates to turtle coordinate
- * Coordinates in the drawing context are converted to the turtle's
- * coordinate system using a function of this type.
- * @param Yertle        the \ref CGWTurtle object
- * @param world_coord   the location in world coordinates
- * @param context       user-provided opaque pointer that the callback can use
- *                      for its own data w.r.t. drawing
- * @return              the location in turtle coordinates
- */
-typedef CGWPoint (*CGWTurtleCoordFromWorldCallback)(CGWTurtleRef Yertle, CGWPoint world_coord, const void *context);
-
-/**
- * A set of callback functions to a CGWTurtle object
- * Setting any member field of this structure to NULL indicates the absence
- * of a callback function.
- */
-typedef struct {
-    const void                          *context;           /*!< an opaque pointer that will be passed to the callback functions */
-    CGWTurtleDrawPixelCallback          draw_pixel;         /*!< callback that draws a generated pixel */
-    CGWTurtleCoordToWorldCallback       turtle_to_world;    /*!< callback that converts turtle coordinates to world coordinates */
-    CGWTurtleCoordFromWorldCallback     world_to_turtle;    /*!< callback that converts world coordinates to turtle coordinates */
-} CGWTurtleCallbacks;
-
-/**
- * Default turtle-to-world coordinate converter
- * The turtle has a bounds that is a symmetric Cartesian region with the
- * origin at the center.  Since the assumption is that the turtle pixels
- * will be displayed to a screen whose origin is at the top-left, this
- * callback converts turtle coordinates to that scheme.
- */
-const CGWTurtleCoordToWorldCallback CGWTurtleDefaultCoordToWorldCallback;
-
-/**
- * Default world-to-turtle coordinate converter
- * The turtle has a bounds that is a symmetric Cartesian region with the
- * origin at the center.  Since the assumption is that the turtle pixels
- * will be displayed to a screen whose origin is at the top-left, this
- * callback converts world coordinates in that scheme to the turtle's
- * standard Cartesian scheme.
- */
-const CGWTurtleCoordFromWorldCallback CGWTurtleDefaultCoordFromWorldCallback;
-
-/**
- * Default non-NULL callbacks
- * This set of callbacks includes the default coordinate transformation
- * callbacks.  It can easily be augmented by copying it:
- *
- *      CGWTurtleCallbacks  myCallbacks = *CGWTurtleDefaultCallbacks;
- *
- *      myCallbacks.context = "this is my supporting data";
- */
-const CGWTurtleCallbacks *CGWTurtleDefaultCallbacks;
-
-/**
  * Observable events generated by a turtle
  * As a turtle's state is changed, events are generated which can be
  * observed by user code.  Some events allow the observer to make
  * alterations to the proposed state change.
+ *
+ * kCGWTurtleEventIdInit
+ *     Initialization of the turtle.
  *
  * kCGWTurtleEventIdWillDestroy
  *     The observer can return zero (0) to indicate that the object
@@ -193,15 +116,23 @@ const CGWTurtleCallbacks *CGWTurtleDefaultCallbacks;
  *      events are generated in that process; see the
  *      \ref CGWTurtlePathFinderStep enumeration for details on
  *      the steps that can be observed.
+ *
+ * kCGWTurtleEventDrawPixel
+ *      When the turtle moves from one point to another the path
+ *      finder will traverse a series of screen coordinates.  When
+ *      the stylus is down, each screen coordinate will trigger one
+ *      of these events so that the consumer can respond
+ *      accordingly -- e.g. by drawing to the screen.
  */
 typedef enum {
-    kCGWTurtleEventIdSetBounds      = 0,
+    kCGWTurtleEventIdInit             = 0,
     kCGWTurtleEventIdWillDestroy,
     kCGWTurtleEventIdDidDestroy,
     kCGWTurtleEventIdStylusStateChange,
     kCGWTurtleEventIdSetPosition,
     kCGWTurtleEventIdSetAngle,
     kCGWTurtleEventPathFinderStep,
+    kCGWTurtleEventDrawPixel,
     kCGWTurtleEventIdMax
 } CGWTurtleEventId;
 
@@ -240,76 +171,106 @@ typedef enum {
 } CGWTurtlePathFinderStep;
 
 /**
- * Supporting data for a path-finder event
- * When a path-finder observer is sent an event, supporting data is provided
- * in a data structure of this type.
- */
-typedef struct {
-    CGWTurtlePathFinderStep     step_type;          /*!< the type of path-finder step generated */
-    union {
-        struct {
-            CGWPoint            start;              /*!< the starting point of the path */
-            CGWPoint            destination;        /*!< the destination to which the path is headed */
-        } begin;                                    /*!< data associated with a kCGWTurtlePathFinderStepBegin event */
-        struct {
-            CGWPoint            start;              /*!< the starting point of the line segment */
-            CGWPoint            end;                /*!< the ending point of the line segment */
-        } line;                                     /*!< data associated with a kCGWTurtlePathFinderStepLine event */
-        struct {
-            CGWPoint            hit_point;          /*!< the point on the wall that has been reached */
-        } hit_wall;                                 /*!< data associated with a kCGWTurtlePathFinderStepHit*Wall event */
-        struct {
-            CGWPoint            hit_point;          /*!< the point on the wall that has been reached */
-            CGWPoint            teleport_to;        /*!< the point to which the turtle will teleport */
-            CGWPoint            new_destination;    /*!< the revised destination point, adjusted for the teleportation */
-        } teleport;                                 /*!< data associated with a kCGWTurtlePathFinderStepTeleport event */
-        struct {
-            CGWPoint            hit_point;          /*!< the point on the wall that has been reached */
-            float               incident_angle;     /*!< the angle at which the turtle hit the wall */
-            float               reflected_angle;    /*!< the angle at which the turtle will leave the wall */
-            CGWPoint            new_destination;    /*!< the revised destination point, adjusted for the reflection */
-        } reflect;                                  /*!< data associated with a kCGWTurtlePathFinderStepReflect event */
-        struct {
-            CGWPoint            hit_point;          /*!< the point on the wall that has been reached */
-            float               angle;              /*!< the angle at which the turtle hit the wall */
-            CGWPoint            new_destination;    /*!< the revised destination point, adjusted for the impact */
-        } slide_on_wall;                            /*!< data associated with a kCGWTurtlePathFinderSlideOn*Wall event */
-        struct {
-            CGWPoint            end;                /*!< the final point the turtle has reached */
-        } end;                                      /*!< data associated with a kCGWTurtlePathFinderStepEnd event */
-    } step_data;
-} CGWTurtlePathFinder;
-
-/**
- * A turtle event
+ * Base turtle event data
  * Data structure that provides data w.r.t. a turtle event that an 
  * observer wishes to...observe.
  *
  * The event_id field indicates the kind of event and determines
  * which data structure in the event_data union applies to this
- * event.
+ * event.  Each event type can append its own fields to this
+ * data structure in a derived type.
  */
 typedef struct {
     CGWTurtleRef            from_turtle;        /*!< the CGWTurtle that generated the event */
     CGWTurtleEventId        event_id;           /*!< the event that was generated */
+} CGWTurtleEvent;
+
+/**
+ * Turtle init event data
+ * Additional fields associated with a \ref kCGWTurtleEventIdInit event.
+ */
+typedef struct {
+    CGWTurtleEvent          base;               /*!< base event fields */
+    CGWBitvector            options;            /*!< the boundary behaviors for the turtle */
+    CGWRectI2D              screen_region;      /*!< the screen coordinate region for the turtle */
+} CGWTurtleEventInit;
+
+/**
+ * Turtle stylus state-change data
+ * Additional fields associated with a \ref kCGWTurtleEventIdStylusStateChange event.
+ */
+typedef struct {
+    CGWTurtleEvent          base;               /*!< base event fields */
+    bool                    is_on;              /*!< the proposed new state of the stylus */
+} CGWTurtleEventStylusStateChange;
+
+/**
+ * Turtle position state-change data
+ * Additional fields associated with a \ref kCGWTurtleEventIdSetPosition event.
+ */
+typedef struct {
+    CGWTurtleEvent          base;               /*!< base event fields */
+    CGWPoint2D              position;           /*!< the proposed new coordinate of the turtle */
+} CGWTurtleEventSetPosition;
+
+/**
+ * Turtle angle state-change data
+ * Additional fields associated with a \ref kCGWTurtleEventIdSetAngle event.
+ */
+typedef struct {
+    CGWTurtleEvent          base;               /*!< base event fields */
+    float                   angle;              /*!< the proposed new orientation angle (in radians) of the turtle */
+} CGWTurtleEventSetAngle;
+
+/**
+ * Turtle path-finder procedural event data
+ * Additional fields associated with a \ref kCGWTurtleEventPathFinderStep event.
+ */
+typedef struct {
+    CGWTurtleEvent              base;               /*!< base event fields */
+    CGWTurtlePathFinderStep     step_type;          /*!< the type of path-finder step generated */
     union {
         struct {
-            CGWBitvector    options;            /*!< the new boundary behaviors for the turtle */
-            CGWSize         size;               /*!< the new region size for the turtle */
-        } set_bounds;                           /*!< fields associated with kCGWTurtleEventIdSetBounds events */
+            CGWPoint2D          start;              /*!< the starting point of the path */
+            CGWPoint2D          destination;        /*!< the destination to which the path is headed */
+        } begin;                                    /*!< data associated with a kCGWTurtlePathFinderStepBegin event */
         struct {
-            bool            is_on;              /*!< the proposed new state of the stylus */
-        } stylus_state_change;                  /*!< fields associated with kCGWTurtleEventIdStylusStateChange events */
+            CGWPoint2D          start;              /*!< the starting point of the line segment */
+            CGWPoint2D          end;                /*!< the ending point of the line segment */
+        } line;                                     /*!< data associated with a kCGWTurtlePathFinderStepLine event */
         struct {
-            CGWPoint        cartesian;          /*!< the proposed new Cartesian coordinate of the turtle */
-            CGWPointP       polar;              /*!< the proposed new polar coordinate of the turtle */
-        } set_position;                         /*!< fields associated with kCGWTurtleEventIdSetPosition events */
+            CGWPoint2D          hit_point;          /*!< the point on the wall that has been reached */
+        } hit_wall;                                 /*!< data associated with a kCGWTurtlePathFinderStepHit*Wall event */
         struct {
-            float           theta;              /*!< the proposed new orientation angle of the turtle (in radians) */
-        } set_angle;                            /*!< fields associated with kCGWTurtleEventIdSetAngle events */
-        CGWTurtlePathFinder path_finder;        /*!< data associated with the path-mapping algorithm */
-    } event_data;
-} CGWTurtleEvent;
+            CGWPoint2D          hit_point;          /*!< the point on the wall that has been reached */
+            CGWPoint2D          teleport_to;        /*!< the point to which the turtle will teleport */
+            CGWPoint2D          new_destination;    /*!< the revised destination point, adjusted for the teleportation */
+        } teleport;                                 /*!< data associated with a kCGWTurtlePathFinderStepTeleport event */
+        struct {
+            CGWPoint2D          hit_point;          /*!< the point on the wall that has been reached */
+            float               incident_angle;     /*!< the angle at which the turtle hit the wall */
+            float               reflected_angle;    /*!< the angle at which the turtle will leave the wall */
+            CGWPoint2D          new_destination;    /*!< the revised destination point, adjusted for the reflection */
+        } reflect;                                  /*!< data associated with a kCGWTurtlePathFinderStepReflect event */
+        struct {
+            CGWPoint2D          hit_point;          /*!< the point on the wall that has been reached */
+            float               angle;              /*!< the angle at which the turtle hit the wall */
+            CGWPoint2D          new_destination;    /*!< the revised destination point, adjusted for the impact */
+        } slide_on_wall;                            /*!< data associated with a kCGWTurtlePathFinderSlideOn*Wall event */
+        struct {
+            CGWPoint2D          end;                /*!< the final point the turtle has reached */
+        } end;                                      /*!< data associated with a kCGWTurtlePathFinderStepEnd event */
+    } step_data;
+} CGWTurtleEventPathFinderStep;
+
+/**
+ * Turtle pixel-drawing event data
+ * Additional fields associated with a \ref kCGWTurtleEventDrawPixel event.
+ */
+typedef struct {
+    CGWTurtleEvent          base;               /*!< base event fields */
+    CGWPointI2D             position;           /*!< the pixel coordinate at which a pixel should be drawn */
+} CGWTurtleEventDrawPixel;
 
 /**
  * Pointer to event data
@@ -342,13 +303,12 @@ typedef int (*CGWTurtleEventObserver)(CGWTurtleEventPtr the_event, const void *c
  * a default name is generated for the object (e.g. "turtle_12").  Take a
  * wild guess what the number represents.
  * @param name              the optional name of the turtle
- * @param bounds            the size of the region containing the turtle
+ * @param screen_region     the integral region that will function as the
+ *                          turtle display
  * @param options           optional behaviors (see the enumeration)
- * @param cbs               callbacks for the object; NULL implies no
- *                          callback functions will be used
  * @return                  the new CGWTurtle object, NULL on error
  */
-CGWTurtleRef CGWTurtleCreate(const char *name, CGWSize bounds, CGWBitvector options, const CGWTurtleCallbacks *cbs);
+CGWTurtleRef CGWTurtleCreate(const char *name, CGWRectI2D screen_region, CGWBitvector options);
 
 /**
  * Destroy a CGWTurtle object
@@ -364,93 +324,6 @@ void CGWTurtleDestroy(CGWTurtleRef Yertle);
  */
 void CGWTurtleSummarize(CGWTurtleRef Yertle);
 
- /**
- * Get a copy of a turtle's callbacks
- * Copies the callbacks associated with \p Yertle to the struct
- * that \p cbs points to.
- * @param Yertle        the CGWTurtle object
- * @param cbs           pointer to a CGWTurtleCallbacks
- */
-void CGWTurtleGetCallbacks(CGWTurtleRef Yertle, CGWTurtleCallbacks *cbs);
-
-/**
- * Set a turtle's callbacks
- * Overwrite the callbacks of \p Yertle with those in the \ref CGWTurtleCallbacks
- * that \p cbs points to.
- * @param Yertle        the CGWTurtle object
- * @param cbs           pointer to a CGWTurtleCallbacks
- * @return              returns the reference to the CGWTurtle (for call-chaining)
- */
-CGWTurtleRef CGWTurtleSetCallbacks(CGWTurtleRef Yertle, const CGWTurtleCallbacks *cbs);
-
-/**
- * Get a turtle's callback context
- * Returns the opaque pointer that will be passed to all callbacks.
- * @param Yertle        the CGWTurtle object
- * @return              the opaque pointer associated with \p Yertle
- */
-const void* CGWTurtleGetCallbackContext(CGWTurtleRef Yertle);
-
-/**
- * Set a turtle's callback context
- * Sets the opaque pointer that will be passed to all callbacks.
- * @param Yertle        the CGWTurtle object
- * @param cb_context    the opaque pointer associated with \p Yertle
- * @return              returns the reference to the CGWTurtle (for call-chaining)
- */
-CGWTurtleRef CGWTurtleSetCallbackContext(CGWTurtleRef Yertle, const void *cb_context);
-
-/**
- * Get a turtle's pixel-drawing callback
- * Returns the CGWTurtleDrawPixelCallback associated with \p Yertle
- * @param Yertle        the CGWTurtle object
- * @return              the CGWTurtleDrawPixelCallback
- */
-CGWTurtleDrawPixelCallback CGWTurtleGetDrawPixelCallback(CGWTurtleRef Yertle);
-
-/**
- * Set a turtle's pixel-drawing callback
- * Sets the CGWTurtleDrawPixelCallback associated with \p Yertle
- * @param Yertle        the CGWTurtle object
- * @param cb            a CGWTurtleDrawPixelCallback (or NULL)
- * @return              returns the reference to the CGWTurtle (for call-chaining)
- */
-CGWTurtleRef CGWTurtleSetDrawPixelCallback(CGWTurtleRef Yertle, CGWTurtleDrawPixelCallback cb);
-
-/**
- * Get a turtle's turtle-to-world coordinate transform callback
- * Returns the CGWTurtleCoordToWorldCallback associated with \p Yertle
- * @param Yertle        the CGWTurtle object
- * @return              the CGWTurtleCoordToWorldCallback
- */
-CGWTurtleCoordToWorldCallback CGWTurtleGetCoordToWorldCallback(CGWTurtleRef Yertle);
-
-/**
- * Set a turtle's turtle-to-world coordinate transform callback
- * Sets the CGWTurtleCoordToWorldCallback associated with \p Yertle
- * @param Yertle        the CGWTurtle object
- * @param cb            a CGWTurtleCoordToWorldCallback (or NULL)
- * @return              returns the reference to the CGWTurtle (for call-chaining)
- */
-CGWTurtleRef CGWTurtleSetCoordToWorldCallback(CGWTurtleRef Yertle, CGWTurtleCoordToWorldCallback cb);
-
-/**
- * Get a turtle's world-to-turtle coordinate transform callback
- * Returns the CGWTurtleCoordFromWorldCallback associated with \p Yertle
- * @param Yertle        the CGWTurtle object
- * @return              the CGWTurtleCoordFromWorldCallback
- */
-CGWTurtleCoordFromWorldCallback CGWTurtleGetCoordFromWorldCallback(CGWTurtleRef Yertle);
-
-/**
- * Set a turtle's world-to-turtle coordinate transform callback
- * Sets the CGWTurtleCoordFromWorldCallback associated with \p Yertle
- * @param Yertle        the CGWTurtle object
- * @param cb            a CGWTurtleCoordFromWorldCallback (or NULL)
- * @return              returns the reference to the CGWTurtle (for call-chaining)
- */
-CGWTurtleRef CGWTurtleSetCoordFromWorldCallback(CGWTurtleRef Yertle, CGWTurtleCoordFromWorldCallback cb);
-
 /**
  * Reset all internal state for a turtle
  * The internal state of \p Yertle is reset.  The turtle returns to its default
@@ -464,12 +337,14 @@ CGWTurtleRef CGWTurtleStateReset(CGWTurtleRef Yertle);
  * Reset all internal state for a turtle with changes to its behavior
  * The internal state of \p Yertle is reset and the optional behaviors and bounds
  * are modified.  The turtle returns to its default starting position and angle.
- * @param Yertle        the CGWTurtle object
- * @param bounds        the new boundary size for \p Yertle
- * @param options       the new optional behaviors for \p Yertle
- * @return              returns the reference to the CGWTurtle (for call-chaining)
+ * @param Yertle            the CGWTurtle object
+ * @param screen_region     the new integral region that will function as the
+ *                          turtle display for Yertle
+ * @param options           the new optional behaviors for \p Yertle
+ * @return                  returns the reference to the CGWTurtle (for 
+ *                          call-chaining)
  */
-CGWTurtleRef CGWTurtleStateResetWithChanges(CGWTurtleRef Yertle, CGWSize bounds, CGWBitvector options);
+CGWTurtleRef CGWTurtleStateResetWithChanges(CGWTurtleRef Yertle, CGWRectI2D screen_region, CGWBitvector options);
 
 /**
  * Get the stylus state
@@ -495,54 +370,38 @@ CGWTurtleRef CGWTurtleStateSetStylusIsOn(CGWTurtleRef Yertle, bool is_on);
 CGWTurtleRef CGWTurtleStateToggleStylusIsOn(CGWTurtleRef Yertle);
 
 /**
- * Get the Cartesian position of the turtle
+ * Get the turtle-coordinate position of the turtle
  * @param Yertle        the CGWTurtle object
- * @return              the Cartesian location of \p Yertle
+ * @return              the turtle-coordinate location of \p Yertle
  */
-CGWPoint CGWTurtleStateGetPosition(CGWTurtleRef Yertle);
+CGWPoint2D CGWTurtleStateGetPosition(CGWTurtleRef Yertle);
 
 /**
- * Set the Cartesian position of the turtle
+ * Set the turtle-coordinate position of the turtle
  * Any boundary behaviors for \p Yertle are applied to \p position.
  * @param Yertle        the CGWTurtle object
- * @param position      the Cartesian location of \p Yertle
+ * @param position      the turtle-coordinate location of \p Yertle
  * @return              returns the reference to the CGWTurtle (for call-chaining)
  */
-CGWTurtleRef CGWTurtleStateSetPosition(CGWTurtleRef Yertle, CGWPoint position);
+CGWTurtleRef CGWTurtleStateSetPosition(CGWTurtleRef Yertle, CGWPoint2D position);
 
 /**
- * Get the polar position of the turtle
+ * Get the screen-coordinate position of the turtle
  * @param Yertle        the CGWTurtle object
- * @return              the polar location of \p Yertle
- */
-CGWPointP CGWTurtleStateGetPolarPosition(CGWTurtleRef Yertle);
-
-/**
- * Set the polar position of the turtle
- * Any boundary behaviors for \p Yertle are applied to \p position.
- * @param Yertle        the CGWTurtle object
- * @param position      the polar location of \p Yertle
- * @return              returns the reference to the CGWTurtle (for call-chaining)
- */
-CGWTurtleRef CGWTurtleStateSetPolarPosition(CGWTurtleRef Yertle, CGWPointP position);
-
-/**
- * Get the world-coordinates Cartesian position of the turtle
- * @param Yertle        the CGWTurtle object
- * @return              the Cartesian location of \p Yertle in world
+ * @return              the screen-coordinate location of \p Yertle in screen
  *                      coordinates
  */
-CGWPoint CGWTurtleStateGetWorldPosition(CGWTurtleRef Yertle);
+CGWPointI2D CGWTurtleStateGetScreenPosition(CGWTurtleRef Yertle);
 
 /**
- * Set the world-coordinates Cartesian position of the turtle
+ * Set the screen-coordinate position of the turtle
  * Any boundary behaviors for \p Yertle are applied to \p wposition.
  * @param Yertle        the CGWTurtle object
- * @param wposition     the Cartesian location of \p Yertle in world
+ * @param wposition     the screen-coordinate location of \p Yertle in world
  *                      coordinates
  * @return              returns the reference to the CGWTurtle (for call-chaining)
  */
-CGWTurtleRef CGWTurtleStateSetWorldPosition(CGWTurtleRef Yertle, CGWPoint wposition);
+CGWTurtleRef CGWTurtleStateSetScreenPosition(CGWTurtleRef Yertle, CGWPointI2D position);
 
 /**
  * Get the angle of the turtle
@@ -558,7 +417,7 @@ float CGWTurtleStateGetAngle(CGWTurtleRef Yertle);
  * @param theta         the angle (in radians) of \p Yertle
  * @return              returns the reference to the CGWTurtle (for call-chaining)
  */
-CGWTurtleRef CGWTurtleStateSetAngle(CGWTurtleRef Yertle, float theta);
+CGWTurtleRef CGWTurtleStateSetAngle(CGWTurtleRef Yertle, float angle);
 
 /**
  * Move the turtle relative to its current position
@@ -569,7 +428,8 @@ CGWTurtleRef CGWTurtleStateSetAngle(CGWTurtleRef Yertle, float theta);
  * @param Yertle        the CGWTurtle object
  * @param dposition     the distance to move; if negative, the
  *                      movement is in the opposite direction of
- *                      the angle but the angle remains unchanged
+ *                      the angle but the angle remains unchanged; the
+ *                      distance is in turtle-coordinate space
  * @return              returns the reference to the CGWTurtle (for call-chaining)
  */
 CGWTurtleRef CGWTurtleStateMove(CGWTurtleRef Yertle, float dposition);
@@ -616,7 +476,7 @@ void CGWTurtleSetEventObserver(CGWTurtleRef Yertle, CGWTurtleEventId event_id, C
 
 
 void CGWTurtleActionMove(CGWTurtleRef Yertle, float dposition);
-void CGWTurtleActionMoveTo(CGWTurtleRef Yertle, CGWPoint position);
+void CGWTurtleActionMoveTo(CGWTurtleRef Yertle, CGWPoint2D position);
 
 
-#endif /* __CGWTURTLEH__ */
+#endif /* __CGWTURTLE2D_H__ */

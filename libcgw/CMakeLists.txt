@@ -149,14 +149,14 @@ target_include_directories(cgw PRIVATE ${CURSES_INCLUDE_DIR})
 
 # Create the library target:
 add_executable(fptest
-        CGWUtil.c CGWMath.c CGWMath.s CGWFixedPrec.c CGWGeom2D.c CGWGeom2D.s CGWGeom.c CGWGeom.s CGWCSGeom.c
-        CGWTurtle.c
+        CGWUtil.c CGWMath.c CGWMath.s CGWFixedPrec.c
+        CGWGeom2D.c CGWGeom2D.s CGWCSGeom2D.c
         fptest.c)
 
 
 
 # Create the library target:
 add_executable(turtletest
-        CGWUtil.c CGWMath.c CGWMath.s CGWFixedPrec.c CGWGeom.c CGWGeom.s CGWCSGeom.c
-        CGWTurtle.c
+        CGWUtil.c CGWMath.c CGWMath.s CGWFixedPrec.c CGWGeom2D.c CGWGeom2D.s
+        CGWTurtle2D.c
         turtletest.c)

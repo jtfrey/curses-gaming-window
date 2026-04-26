@@ -15,6 +15,16 @@
 #include "CGWFixedPrec.h"
 
 /**
+ * Standard tolerance for "equal" distances
+ */
+#define F_DISTANCE_TOL  1e-6
+
+/*
+ * Standard tolerance for "equal" angles
+ */
+#define F_ANGLE_TOL     1e-6
+
+/**
  * π/180
  * Precalculated constant for π/180
  */
@@ -156,7 +166,128 @@ CGWPoint2DMake(
     return the_point;
 }
 
+/**
+ * Returns the sum of two CGWPoint2D points
+ * Sum two CGWPoint2D points.
+ * @param p1    A CGWPoint2D, first addend
+ * @param p2    A CGWPoint2D, second addend
+ * @return      A CGWPoint2D structure containing the sum
+ */
+static inline
+CGWPoint2D
+CGWPoint2DSum(
+    CGWPoint2D  p1,
+    CGWPoint2D  p2
+)
+{
+    CGWPoint2D  the_point = { .x = p1.x + p2.x, .y = p1.y + p2.y };
+    return the_point;
+}
 
+/**
+ * Returns the scaled sum of two CGWPoint2D points
+ * Scaled sum of two CGWPoint2D points, p1 + s * p2
+ * @param p1    A CGWPoint2D, first addend
+ * @param s     A scalar
+ * @param p2    A CGWPoint2D, second addend
+ * @return      A CGWPoint2D structure containing the sum
+ */
+static inline
+CGWPoint2D
+CGWPoint2DScaledSum(
+    CGWPoint2D  p1,
+    float       s,
+    CGWPoint2D  p2
+)
+{
+    CGWPoint2D  the_point = { .x = p1.x + s * p2.x, .y = p1.y + s * p2.y };
+    return the_point;
+}
+
+#ifndef HAVE_APPLE_AARCH64
+
+    /**
+     * L1 norm of the 2D point (treated as a vector)
+     * Calculates the L1 norm -- sum of absolute values of the
+     * components -- of the vector (\\vec{\p p} - \\vec{0}).
+     * @param p     A CGWPoint2D to act as the endpoint of
+     *              the vector relative to the origin
+     * @return      the computed norm
+     */
+    static inline
+    float
+    CGWPoint2DNormL1(
+        CGWPoint2D  p
+    )
+    {
+        return fabs(p.x) + fabs(p.y);
+    }
+
+    /**
+     * L2 norm of the 2D point (treated as a vector)
+     * Calculates the L2 norm -- Euclidean distance -- of
+     * the vector (\\vec{\p p} - \\vec{0}).
+     * @param p     A CGWPoint2D to act as the endpoint of
+     *              the vector relative to the origin
+     * @return      the computed norm
+     */
+    static inline
+    float
+    CGWPoint2DNormL2(
+        CGWPoint2D  p
+    )
+    {
+        return sqrt(p.x * p.x + p.y * p.y);
+    }
+
+    /**
+     * L∞ norm of the 2D point (treated as a vector)
+     * Calculates the L∞ norm -- largest magnitude element -- of
+     * the vector (\\vec{\p p} - \\vec{0}).
+     * @param p     A CGWPoint2D to act as the endpoint of
+     *              the vector relative to the origin
+     * @return      the computed norm
+     */
+    static inline
+    float
+    CGWPoint2DNormLInf(
+        CGWPoint2D  p
+    )
+    {
+        float       absx = fabs(p.x),
+                    absy = fabs(p.y);
+        return (absx > absy) ? absx : absy;
+    }
+
+#endif
+
+/**
+ * Distance between two points
+ * Calculates the Euclidean distance between two points.
+ * @param p1        first point
+ * @param p2        second point
+ * @return          the distance
+ */
+static inline
+float
+CGWPoint2DDist(
+    CGWPoint2D  p1,
+    CGWPoint2D  p2
+)
+{
+    float       dx = p2.x - p1.x,
+                dy = p2.y - p1.y;
+    return sqrt(dx * dx + dy * dy);
+}
+
+/**
+ * Test equality of two 2D points
+ * Evaluates to true if \p P1 and \p P2 are equivalent.
+ * @param P1        first point
+ * @param P2        second point
+ * @return          true if the points are equivalent
+ */
+#define CGWPoint2DEqual(P1, P2) (CGWPoint2DDist((P1), (P2)) < F_DISTANCE_TOL)
 
 
 /*
@@ -168,6 +299,15 @@ typedef struct {
     int         x;  /*!< the x-coordinate */
     int         y;  /*!< the y-coordinate */
 } CGWPointI2D;
+
+/**
+ * Test equality of two integral 2D points
+ * Evaluates to true if \p P1 and \p P2 are equivalent.
+ * @param P1        first point
+ * @param P2        second point
+ * @return          true if the points are equivalent
+ */
+#define CGWPointI2DEqual(P1, P2) (((P1).x == (P2).x) && ((P1).y == (P2).y))
 
 /**
  * The Cartesian origin
@@ -191,6 +331,44 @@ CGWPointI2DMake(
 )
 {
     CGWPointI2D the_point = { .x = x, .y = y };
+    return the_point;
+}
+
+/**
+ * Returns the sum of two CGWPointI2D points
+ * Sum two CGWPointI2D points.
+ * @param p1    A CGWPointI2D, first addend
+ * @param p2    A CGWPointI2D, second addend
+ * @return      A CGWPointI2D structure containing the sum
+ */
+static inline
+CGWPointI2D
+CGWPointI2DSum(
+    CGWPointI2D p1,
+    CGWPointI2D p2
+)
+{
+    CGWPointI2D the_point = { .x = p1.x + p2.x, .y = p1.y + p2.y };
+    return the_point;
+}
+
+/**
+ * Returns the scaled sum of two CGWPointI2D points
+ * Scaled sum of two CGWPointI2D points, p1 + s * p2
+ * @param p1    A CGWPointI2D, first addend
+ * @param s     A scalar
+ * @param p2    A CGWPointI2D, second addend
+ * @return      A CGWPointI2D structure containing the sum
+ */
+static inline
+CGWPointI2D
+CGWPointI2DScaledSum(
+    CGWPointI2D p1,
+    int         s,
+    CGWPointI2D p2
+)
+{
+    CGWPointI2D the_point = { .x = p1.x + s * p2.x, .y = p1.y + s * p2.y };
     return the_point;
 }
 
@@ -267,6 +445,46 @@ CGWPointFP2DMake(
 {
     CGWPointFP2D    the_point = { .x = x, .y = y };
     return the_point;
+}
+
+/**
+ * Returns the sum of two CGWPointFP2D points
+ * Sum two CGWPointFP2D points.
+ * @param p1    A CGWPointFP2D, first addend
+ * @param p2    A CGWPointFP2D, second addend
+ * @return      A CGWPointFP2D structure containing the sum
+ */
+static inline
+CGWPointFP2D
+CGWPointFP2DSum(
+    CGWPointFP2D  p1,
+    CGWPointFP2D  p2
+)
+{
+    CGWPointFP2D  the_point = { .x = CGWFixedPrecAdd(p1.x, p2.x),
+                                .y = CGWFixedPrecAdd(p1.y, p2.y) };
+    return the_point;
+}
+
+/**
+ * Returns the scaled sum of two CGWPointFP2D points
+ * Scaled sum of two CGWPointFP2D points, p1 + s * p2
+ * @param p1    A CGWPointFP2D, first addend
+ * @param s     A scalar
+ * @param p2    A CGWPointFP2D, second addend
+ * @return      A CGWPointFP2D structure containing the sum
+ */
+static inline
+CGWPointFP2D
+CGWPointFP2DScaledSum(
+    CGWPointFP2D    p1,
+    CGWFixedPrec    s,
+    CGWPointFP2D    p2
+)
+{
+    CGWPointFP2D    the_point = { .x = CGWFixedPrecMul(s, p2.x),
+                                  .y = CGWFixedPrecMul(s, p2.y) };
+    return CGWPointFP2DSum(p1, the_point);
 }
 
 /**
@@ -396,18 +614,39 @@ CGWPolarPointMake(
 }
 
 /**
- * Fixup a polar point to be within the standard angle range
- * Polar points can be standardized:  the distance r can be
- * forced to be positive by rotating theta through π radians,
- * and the angle theta can be force into the range [-π, +π).
- * @param p_in      the polar point to fixup
- * @param epsilon   values this close to ±πn will be forced
- *                  to that angle
- * @param p_out     the fixed-up polar point (can be the same
- *                  as pointer \p p_in)
- * @return          the \p p_out pointer or NULL on failure
- */
-CGWPolarPoint* CGWPolarPointStandardize(CGWPolarPoint *p_in, float epsilon, CGWPolarPoint *p_out);
+ * Returns the sum of two CGWPolarPoint points
+ * Sum two CGWPolarPoint points.
+ * @param p1    A CGWPolarPoint, first addend
+ * @param p2    A CGWPolarPoint, second addend
+ * @return      A CGWPolarPoint structure containing the sum
+ */ 
+CGWPolarPoint CGWPolarPointSum(CGWPolarPoint p1, CGWPolarPoint p2);
+
+#ifdef HAVE_APPLE_AARCH64
+    //
+    // Declare the assembly prototypes and alias to the C function names:
+    //
+    extern CGWPolarPoint* CGWPolarPointStandardizeAsm(CGWPolarPoint *out_p, CGWPolarPoint *p,
+                                                float epsilon);
+    #define CGWPolarPointStandardize CGWPolarPointStandardizeAsm
+#else
+
+    /**
+     * Fixup a polar point to be within the standard angle range
+     * Polar points can be standardized:  the distance r can be
+     * forced to be positive by rotating theta through π radians,
+     * and the angle theta can be force into the range [-π, +π).
+     * @param p_out     the fixed-up polar point (can be the same
+     *                  as pointer \p p_in)
+     * @param p_in      the polar point to fixup
+     * @param epsilon   values this close to ±πn will be forced
+     *                  to that angle
+     * @return          the \p p_out pointer or NULL on failure
+     */
+    CGWPolarPoint* CGWPolarPointStandardize(CGWPolarPoint *p_out, CGWPolarPoint *p_in,
+                                                float epsilon);
+
+#endif
 
 /**
  * Default minimum representable angle w.r.t. the x-axis
@@ -588,40 +827,6 @@ typedef struct {
 #define CGWXFormMatrix2D_IJ(X,I,J) ((X)[((I)<<2)+(J)])
 
 /**
- * Set a 2D transform matrix to all zeroes
- * The entire matrix is initialized to zeroes.
- * @param M     pointer to the matrix to modify
- * @return      the pointer, \p M
- */
-static inline
-CGWXFormMatrix2D*
-CGWXFormMatrix2DSetZero(
-    CGWXFormMatrix2D    *M
-)
-{
-    memset(M, 0, sizeof(*M));
-    return M;
-}
-
-/**
- * Set a 2D transform matrix to the identity
- * The entire matrix is initialized to zeroes and ones are
- * placed on the diagonal.
- * @param M     pointer to the matrix to modify
- * @return      the pointer, \p M
- */
-static inline
-CGWXFormMatrix2D*
-CGWXFormMatrix2DSetIdentity(
-    CGWXFormMatrix2D    *M
-)
-{
-    memset(M, 0, sizeof(*M));
-    CGWXFormMatrix2D_IJ(M->M, 0, 0) = CGWXFormMatrix2D_IJ(M->M, 1, 1) = 1.0f;
-    return M;
-}
-
-/**
  * Set the rotational elements of a 2D transform matrix
  * Upper 2x2 submatrix is initialized with the representation of
  * a rotation of \p theta radians.
@@ -642,74 +847,6 @@ CGWXFormMatrix2DSetRotation(
 }
 
 /**
- * Set the translation elements of a 2D transform matrix
- * The right-most elements are set to \p dx in the first row and
- * \p dy in the second row.
- * @param M     pointer to the matrix to modify
- * @param dx    translation in the first coordinate, x
- * @param dy    translation in the second coordinate, y
- * @return      the pointer, \p M
- */
-static inline
-CGWXFormMatrix2D*
-CGWXFormMatrix2DSetTranslation(
-    CGWXFormMatrix2D    *M,
-    float               dx,
-    float               dy
-)
-{
-    CGWXFormMatrix2D_IJ(M->M, 0, 2) = dx;
-    CGWXFormMatrix2D_IJ(M->M, 1, 2) = dy;
-    return M;
-}
-
-/**
- * Accumulate a translation of a 2D transform matrix
- * Translate the transformation matrix, \p M, by \p dx and
- * \p dy.  This is a shortcut for creating two matrices and
- * multiplying them.
- * @param M     pointer to the matrix to modify
- * @param dx    translation in the first coordinate, x
- * @param dy    translation in the second coordinate, y
- * @return      the pointer, \p M
- */
-static inline
-CGWXFormMatrix2D*
-CGWXFormMatrix2DTranslate(
-    CGWXFormMatrix2D    *M,
-    float               dx,
-    float               dy
-)
-{
-    CGWXFormMatrix2D_IJ(M->M, 0, 2) += dx;
-    CGWXFormMatrix2D_IJ(M->M, 1, 2) += dy;
-    return M;
-}
-
-/**
- * Accumulate a scaling of a 2D transform matrix
- * Scale the transformation matrix, \p M, by \p sx and
- * \p ds.  This is a shortcut for creating two matrices and
- * multiplying them.
- * @param M     pointer to the matrix to modify
- * @param dx    scaling of the first coordinate, x
- * @param dy    scaling of the second coordinate, y
- * @return      the pointer, \p M
- */
-static inline
-CGWXFormMatrix2D*
-CGWXFormMatrix2DScale(
-    CGWXFormMatrix2D    *M,
-    float               sx,
-    float               sy
-)
-{
-    CGWXFormMatrix2D_IJ(M->M, 0, 0) *= sx, CGWXFormMatrix2D_IJ(M->M, 0, 1) *= sx, CGWXFormMatrix2D_IJ(M->M, 0, 2) *= sx;
-    CGWXFormMatrix2D_IJ(M->M, 1, 0) *= sy, CGWXFormMatrix2D_IJ(M->M, 1, 1) *= sy, CGWXFormMatrix2D_IJ(M->M, 1, 2) *= sy;
-    return M;
-}
-
-/**
  * Accumulate a rotation of a 2D transform matrix
  * Rotate the transformation matrix, \p M, by \p theta
  * radians.  This is a shortcut for creating two matrices and
@@ -720,33 +857,109 @@ CGWXFormMatrix2DScale(
  */
 CGWXFormMatrix2D* CGWXFormMatrix2DRotate(CGWXFormMatrix2D *M, float theta);
 
-/**
- * Generic matrix multiply
- * Matrix \p X multiplies matrix \p Y, with the result placed in
- * matrix \p out_M.
- *
- * If \p out_M is unique from \p X or \p Y, the result is written directly
- * to it; otherwise, a temporary matrix is allocated on the stack and then
- * copied to out_M for return.
- *
- * @param X         left matrix
- * @param Y         right matrix
- * @param out_M      result matrix
- */
-CGWXFormMatrix2D* CGWXFormMatrix2DMultiply(CGWXFormMatrix2D *out_M, CGWXFormMatrix2D *X, CGWXFormMatrix2D *Y);
+#ifndef HAVE_APPLE_AARCH64
 
-#ifdef HAVE_APPLE_AARCH64_NEON
-    //
-    // Declare the assembly prototypes and alias to the C function names:
-    //
-    extern CGWXFormMatrix2D* CGWXFormMatrix2DScaledSumAsm(CGWXFormMatrix2D *out_M, float A,
-                                            CGWXFormMatrix2D *X, CGWXFormMatrix2D *Y);
-    #define CGWXFormMatrix2DScaledSum CGWXFormMatrix2DScaledSumAsm
-    //
-    extern CGWPoint2D* CGWXFormMatrix2DDotPoint2DAsm(CGWPoint2D *out_p, CGWXFormMatrix2D *X,
-                                            CGWPoint2D *p);
-    #define CGWXFormMatrix2DDotPoint2D CGWXFormMatrix2DDotPoint2DAsm
-#else
+    /**
+     * Set a 2D transform matrix to all zeroes
+     * The entire matrix is initialized to zeroes.
+     * @param M     pointer to the matrix to modify
+     * @return      the pointer, \p M
+     */
+    static inline
+    CGWXFormMatrix2D*
+    CGWXFormMatrix2DSetZero(
+        CGWXFormMatrix2D    *M
+    )
+    {
+        memset(M, 0, sizeof(*M));
+        return M;
+    }
+
+    /**
+     * Set a 2D transform matrix to the identity
+     * The entire matrix is initialized to zeroes and ones are
+     * placed on the diagonal.
+     * @param M     pointer to the matrix to modify
+     * @return      the pointer, \p M
+     */
+    static inline
+    CGWXFormMatrix2D*
+    CGWXFormMatrix2DSetIdentity(
+        CGWXFormMatrix2D    *M
+    )
+    {
+        memset(M, 0, sizeof(*M));
+        CGWXFormMatrix2D_IJ(M->M, 0, 0) = CGWXFormMatrix2D_IJ(M->M, 1, 1) = 1.0f;
+        return M;
+    }
+
+    /**
+     * Set the translation elements of a 2D transform matrix
+     * The right-most elements are set to \p dx in the first row and
+     * \p dy in the second row.
+     * @param M     pointer to the matrix to modify
+     * @param dx    translation in the first coordinate, x
+     * @param dy    translation in the second coordinate, y
+     * @return      the pointer, \p M
+     */
+    static inline
+    CGWXFormMatrix2D*
+    CGWXFormMatrix2DSetTranslation(
+        CGWXFormMatrix2D    *M,
+        float               dx,
+        float               dy
+    )
+    {
+        CGWXFormMatrix2D_IJ(M->M, 0, 2) = dx;
+        CGWXFormMatrix2D_IJ(M->M, 1, 2) = dy;
+        return M;
+    }
+    
+    /**
+     * Accumulate a translation of a 2D transform matrix
+     * Translate the transformation matrix, \p M, by \p dx and
+     * \p dy.  This is a shortcut for creating two matrices and
+     * multiplying them.
+     * @param M     pointer to the matrix to modify
+     * @param dx    translation in the first coordinate, x
+     * @param dy    translation in the second coordinate, y
+     * @return      the pointer, \p M
+     */
+    static inline
+    CGWXFormMatrix2D*
+    CGWXFormMatrix2DTranslate(
+        CGWXFormMatrix2D    *M,
+        float               dx,
+        float               dy
+    )
+    {
+        CGWXFormMatrix2D_IJ(M->M, 0, 2) += dx;
+        CGWXFormMatrix2D_IJ(M->M, 1, 2) += dy;
+        return M;
+    }
+
+    /**
+     * Accumulate a scaling of a 2D transform matrix
+     * Scale the transformation matrix, \p M, by \p sx and
+     * \p ds.  This is a shortcut for creating two matrices and
+     * multiplying them.
+     * @param M     pointer to the matrix to modify
+     * @param dx    scaling of the first coordinate, x
+     * @param dy    scaling of the second coordinate, y
+     * @return      the pointer, \p M
+     */
+    static inline
+    CGWXFormMatrix2D*
+    CGWXFormMatrix2DScale(
+        CGWXFormMatrix2D    *M,
+        float               sx,
+        float               sy
+    )
+    {
+        CGWXFormMatrix2D_IJ(M->M, 0, 0) *= sx, CGWXFormMatrix2D_IJ(M->M, 0, 1) *= sx, CGWXFormMatrix2D_IJ(M->M, 0, 2) *= sx;
+        CGWXFormMatrix2D_IJ(M->M, 1, 0) *= sy, CGWXFormMatrix2D_IJ(M->M, 1, 1) *= sy, CGWXFormMatrix2D_IJ(M->M, 1, 2) *= sy;
+        return M;
+    }
 
     /**
      * Generic matrix sum
@@ -777,8 +990,835 @@ CGWXFormMatrix2D* CGWXFormMatrix2DMultiply(CGWXFormMatrix2D *out_M, CGWXFormMatr
      * @param p         pointer to the original point
      * @return          the pointer out_p
      */
-    CGWPoint2D* CGWXFormMatrix2DDotPoint2D(CGWPoint2D *out_p, CGWXFormMatrix2D *X, CGWPoint2D *p);
+    CGWPoint2D* CGWXFormMatrix2DDotPoint2D(CGWPoint2D *out_p, CGWXFormMatrix2D *X,
+                                            CGWPoint2D *p);
 
+    /**
+     * Generic matrix multiply
+     * Matrix \p X multiplies matrix \p Y, with the result placed in
+     * matrix \p out_M.
+     *
+     * If \p out_M is unique from \p X or \p Y, the result is written directly
+     * to it; otherwise, a temporary matrix is allocated on the stack and then
+     * copied to out_M for return.
+     *
+     * @param X         left matrix
+     * @param Y         right matrix
+     * @param out_M      result matrix
+     */
+    CGWXFormMatrix2D* CGWXFormMatrix2DMultiply(CGWXFormMatrix2D *out_M, CGWXFormMatrix2D *X,
+                                            CGWXFormMatrix2D *Y);
+    
+    CGWXFormMatrix2D* CGWXFormMatrix2DInvert(CGWXFormMatrix2D *A_inv, CGWXFormMatrix2D *A);
+    
+    CGWXFormMatrix2D* CGWXFormMatrix2DInvertGE(CGWXFormMatrix2D *A_inv, CGWXFormMatrix2D *A);
+#endif
+
+
+/**
+ * Integral dimensions in 2D
+ * A width and height
+ */
+typedef struct {
+    unsigned int    w;      /*!< the x-distance */
+    unsigned int    h;      /*!< the y-distance */
+} CGWSizeI2D;
+
+/**
+ * Create a CGWSizeI2D from component values
+ * A convenience function that manufactures a CGWSizeI2D
+ * structure from component coordinates.
+ * @param w     x-distance
+ * @param h     y-distance
+ * @return      A CGWSizeI2D structure containing the values
+ */
+static inline
+CGWSizeI2D
+CCGWSizeI2DMake(
+    unsigned int    w,
+    unsigned int    h
+)
+{
+    CGWSizeI2D      the_size = { .w = w, .h = h };
+    return the_size;
+}
+
+/**
+ * A 2D rectangle of integral dimensions and position
+ * A rectangle consists of a point of origin and distances in
+ * the two coordinate directions (size).  The size should be
+ * kept positive, with the origin always chosen to fulfill that
+ * condition.
+ */
+typedef struct {
+    CGWPointI2D     origin; /*!< the origin of the rectangle */
+    CGWSizeI2D      size;   /*!< the width and height */
+} CGWRectI2D;
+
+/**
+ * Get the top-left corner of the rectangle
+ * The coordinate system's being the screen, the top-left is
+ * the origin of rectangle \p r.
+ * @param r         a rectangle
+ * @return          the top-left coordinate (in screen orientation)
+ */
+static inline
+CGWPointI2D
+CGWRectI2DTopLeft(
+    CGWRectI2D     r
+)
+{
+    return r.origin;
+}
+
+/**
+ * Get the top-right corner of the rectangle
+ * The coordinate system's being the screen, the top-right is
+ * the origin of rectangle \p r shifted by the width of \p r
+ * in the x-direction.
+ * @param r         a rectangle
+ * @return          the top-right coordinate (in screen orientation)
+ */
+static inline
+CGWPointI2D
+CGWRectI2DTopRight(
+    CGWRectI2D     r
+)
+{
+    r.origin.x += r.size.w;
+    return r.origin;
+}
+
+/**
+ * Get the bottom-left corner of the rectangle
+ * The coordinate system's being the screen, the bottom-left is
+ * the origin of rectangle \p r shifted by the height of \p r
+ * in the y-direction.
+ * @param r         a rectangle
+ * @return          the bottom-left coordinate (in screen orientation)
+ */
+static inline
+CGWPointI2D
+CGWRectI2DBottomLeft(
+    CGWRectI2D     r
+)
+{
+    r.origin.y += r.size.h;
+    return r.origin;
+}
+
+/**
+ * Get the bottom-right corner of the rectangle
+ * The coordinate system's being the screen, the bottom-right is
+ * the origin of rectangle \p r shifted by the width and height
+ * of \p r in the x- and y-direction, respectively.
+ * @param r         a rectangle
+ * @return          the bottom-left coordinate (in screen orientation)
+ */
+static inline
+CGWPointI2D
+CGWRectI2DBottomRight(
+    CGWRectI2D     r
+)
+{
+    r.origin.x += r.size.w;
+    r.origin.y += r.size.h;
+    return r.origin;
+}
+
+
+/**
+ * Create a CGWRectI2D from component values
+ * A convenience function that manufactures a CGWRectI2D
+ * structure from component coordinates and distances.
+ * @param x     x-coordinate of origin
+ * @param y     y-coordinate of origin
+ * @param w     width in the x-direction
+ * @param h     height in the y-direction
+ * @return      A CGWRectI2D structure containing the values
+ */
+static inline
+CGWRectI2D
+CGWRectI2DMake(
+    int             x,
+    int             y,
+    unsigned int    w,
+    unsigned int    h
+)
+{
+    CGWRectI2D     the_rect = { .origin.x = x, .origin.y = y,
+                             .size.w = w, .size.h = h };
+    return the_rect;
+}
+
+/**
+ * Create a CGWRectI2D from two points
+ * A convenience function that manufactures a CGWRectI2D
+ * structure according to the coordinates of two
+ * opposing corners of the rectangle.
+ * @param p1    First corner
+ * @param p2    Opposing corner to p1
+ * @return      A CGWRectI2D structure containing the
+ *              rectangle's origin and size
+ */
+static inline
+CGWRectI2D
+CGWRectI2DMakeWithPoints(
+    CGWPointI2D p1,
+    CGWPointI2D p2
+)
+{
+    int         dx = p2.x - p1.x;
+    int         dy = p2.y - p1.y;
+    
+    return CGWRectI2DMake(
+        ( dx < 0 ) ? p2.x : p1.x,
+        ( dy < 0 ) ? p2.y : p1.y,
+        ( dx < 0 ) ? -dx : dx,
+        ( dy < 0 ) ? -dy : dy);
+}
+
+/**
+ * Does a rectangle contain a point?
+ * Determine if rectangle \p r contains the given
+ * point \p p.
+ * @param r     a rectangle
+ * @param p     the point to test
+ * @return      Boolean true if \p p is contained
+ *              by \p r
+ */
+static inline
+bool
+CGWRectI2DContainsPoint(
+    CGWRectI2D  r,
+    CGWPointI2D p
+)
+{
+    int         dx = p.x - r.origin.x,
+                dy = p.y - r.origin.y;
+    return ((dx >= 0) && (dx <= r.size.w) && (dy >= 0) && (dy <= r.size.h)) ? true : false;
+}
+
+/**
+ * Do two rectangles overlap each other?
+ * Determine if the region occupied by rectangle \p r1
+ * intersects the region occupied by \p r2
+ * @param r1    a rectangle
+ * @param r2    another rectangle
+ * @return      Boolean true if \p r1 and \p r2
+ *              overlap
+ */
+bool CGWRectI2DOverlapsRect(CGWRectI2D r1, CGWRectI2D r2);
+
+
+/**
+ * A circle of integral dimensions
+ * A circle consists of an origin point and a radius.  The radius
+ * must be positive.
+ */
+typedef struct {
+    CGWPointI2D     origin;     /*!< the point at which the circle is centered */
+    unsigned int    radius;     /*!< the radius of the circle */
+} CGWCircleI;
+
+/**
+ * Create a CGWCircleI from component values
+ * A convenience function that manufactures a CGWCircleI
+ * structure from component coordinates and radius.
+ * @param x     x-coordinate of origin
+ * @param y     y-coordinate of origin
+ * @param r     radius
+ * @return      A CGWCircleI structure containing the values
+ */
+static inline
+CGWCircleI
+CGWCircleIMake(
+    int             x,
+    int             y,
+    unsigned int    r
+)
+{
+    CGWCircleI      new_circle = {
+                        .origin.x = x,
+                        .origin.y = y,
+                        .radius = r
+                    };
+    return new_circle;
+}
+
+/**
+ * Does a circle contain a point?
+ * Determine if circle \p c contains the given
+ * point \p p.
+ * @param c     a circle
+ * @param p     the point to test
+ * @return      Boolean true if \p p is contained
+ *              by \p c
+ */
+static inline
+bool
+CGWCircleIContainsPoint(
+    CGWCircleI      c,
+    CGWPointI2D     p
+)
+{
+    int64_t         dist, rem;
+    int64_t         dx = c.origin.x - p.x,
+                    dy = c.origin.y - p.y;
+    dist = CGWSqrtInt64(dx * dx + dy * dy, &rem);
+    return ((dist < c.radius) || ((dist == c.radius) && (rem == 0)));
+}
+
+/**
+ * Do two circles overlap each other?
+ * Determine if the region occupied by circle \p c1
+ * intersects the region occupied by \p c2
+ * @param c1    a circle
+ * @param c2    another circle
+ * @return      Boolean true if \p c1 and \p c2
+ *              overlap
+ */
+static inline
+bool
+CGWCircleIOverlapsCircle(
+    CGWCircleI      c1,
+    CGWCircleI      c2
+)
+{
+    int64_t         dist, rem, odist = c2.radius + c1.radius;
+    int64_t         dx = c2.origin.x - c1.origin.x,
+                    dy = c2.origin.y - c1.origin.y;
+    dist = CGWSqrtInt64(dx * dx + dy * dy, &rem);
+    return ((dist < odist) || ((dist == odist) && (rem == 0)));
+}
+
+/**
+ * Do a circle and rectangle overlap?
+ * The point on the perimeter of the rectangle nearest to the
+ * center of the circle is found, and if it is ≤ the radius of the
+ * circle away from the circle's center, the two figures overlap.
+ * @param r         a rectangle
+ * @param c         a circle
+ * @return          boolean true if the two figures overlap,
+ *                  false otherwise
+ */
+bool CGWRectI2DOverlapsCircle(CGWRectI2D r, CGWCircleI c);
+
+/**
+ * Alias circle-rect to the rect-circle function
+ * In case the programmer forgets which function is actually
+ * defined -- rect then circle vs. circle then rect -- this
+ * macro rewrites the latter to be the former.
+ * @param C         a circle
+ * @param R         a rectangle
+ * @return          boolean true if the two figures overlap,
+ *                  false otherwise
+ */
+#define CGWCircleIOverlapsRect(C, R) CGWRectI2DOverlapsCircle((R), (C))
+
+/**
+ * Is one rectangle completely contained inside another?
+ * Determine whether \p r2 is completely contained inside \p r1.
+ * @param r1        does this rectangle contain the other?
+ * @param r2        the other rectangle
+ * @return          boolean true if \p r2 is completely contained
+ *                  within \p r1
+ */
+static inline
+bool
+CGWRectI2DContainsRect(
+    CGWRectI2D  r1,
+    CGWRectI2D  r2
+)
+{
+    // Check that all corners of r2 are within r1:
+    if ( ! CGWRectI2DContainsPoint(r1, r2.origin) ) return false;
+    if ( ! CGWRectI2DContainsPoint(r1, CGWRectI2DTopRight(r2)) ) return false;
+    if ( ! CGWRectI2DContainsPoint(r1, CGWRectI2DBottomRight(r2)) ) return false;
+    if ( ! CGWRectI2DContainsPoint(r1, CGWRectI2DBottomLeft(r2)) ) return false;
+    return true;
+}
+
+/**
+ * Is a circle completely contained inside a rectangle?
+ * Determine whether \p c is completely contained inside \p r.
+ * @param r         does this rectangle contain the circle?
+ * @param c         the circle
+ * @return          boolean true if \p c is completely contained
+ *                  within \p r
+ */
+static inline
+bool
+CGWRectI2DContainsCircle(
+    CGWRectI2D  r,
+    CGWCircleI  c
+)
+{
+    // Origin must be interior to r:
+    if ( ! CGWRectI2DContainsPoint(r, c.origin) ) return false;
+    // Shift x- and y-extents of r such that c is at origin:
+    r.origin.x -= c.origin.x, r.origin.y -= c.origin.y;
+    // If any extent of r is now less than the radius, the circle
+    // is NOT contained:
+    if ( -r.origin.x < c.radius ) return false;
+    if ( r.origin.x + r.size.w < c.radius ) return false;
+    if ( -r.origin.y < c.radius ) return false;
+    if ( r.origin.y + r.size.h < c.radius ) return false;
+    return true;
+}
+
+/**
+ * Is one circle completely contained inside another?
+ * Determine whether \p c2 is completely contained inside \p c1.
+ * @param r1        does this circle contain the other?
+ * @param r2        the other circle
+ * @return          boolean true if \p c2 is completely contained
+ *                  within \p c1
+ */
+static inline
+bool
+CGWCircleIContainsCircle(
+    CGWCircleI      c1,
+    CGWCircleI      c2
+)
+{
+    int64_t         dist, rem;
+    int64_t         dx = c2.origin.x - c1.origin.x,
+                    dy = c2.origin.y - c1.origin.y;
+    dist = CGWSqrtInt64(dx * dx + dy * dy, &rem);
+    if ( (dist + c2.radius < c1.radius) || ((dist + c2.radius == c1.radius) && (rem == 0)) ) return true;
+    return false;
+}
+
+/**
+ * Is a rectangle completely contained inside a circle?
+ * Determine whether \p r is completely contained inside \p c.
+ * @param r         does this circle contain the rectangle?
+ * @param c         the rectangle
+ * @return          boolean true if \p r is completely contained
+ *                  within \p c
+ */
+static inline
+bool
+CGWCircleIContainsRect(
+    CGWCircleI  c,
+    CGWRectI2D  r
+)
+{
+    // Check that all corners or r are within c:
+    if ( ! CGWCircleIContainsPoint(c, r.origin) ) return false;
+    if ( ! CGWCircleIContainsPoint(c, CGWRectI2DTopRight(r)) ) return false;
+    if ( ! CGWCircleIContainsPoint(c, CGWRectI2DBottomRight(r)) ) return false;
+    if ( ! CGWCircleIContainsPoint(c, CGWRectI2DBottomLeft(r)) ) return false;
+    return true;
+}
+
+
+
+
+
+/**
+ * Dimensions in 2D
+ * A width and height
+ */
+typedef struct {
+    float       w;      /*!< the x-distance */
+    float       h;      /*!< the y-distance */
+} CGWSize2D;
+
+/**
+ * Create a CGWSize2D from component values
+ * A convenience function that manufactures a CGWSize2D
+ * structure from component coordinates.
+ * @param w     x-distance
+ * @param h     y-distance
+ * @return      A CGWSize2D structure containing the values
+ */
+static inline
+CGWSize2D
+CCGWSize2DMake(
+    float           w,
+    float           h
+)
+{
+    CGWSize2D       the_size = { .w = fabs(w), .h = fabs(h) };
+    return the_size;
+}
+
+/**
+ * A 2D rectangle
+ * A rectangle consists of a point of origin and distances in
+ * the two coordinate directions (size).  The size should be
+ * kept positive, with the origin always chosen to fulfill that
+ * condition.
+ */
+typedef struct {
+    CGWPoint2D      origin; /*!< the origin of the rectangle */
+    CGWSize2D       size;   /*!< the width and height */
+} CGWRect2D;
+
+/**
+ * Get the top-left corner of the rectangle
+ * The coordinate system's being the screen, the top-left is
+ * the origin of rectangle \p r.
+ * @param r         a rectangle
+ * @return          the top-left coordinate (in screen orientation)
+ */
+static inline
+CGWPoint2D
+CGWRect2DTopLeft(
+    CGWRect2D      r
+)
+{
+    return r.origin;
+}
+
+/**
+ * Get the top-right corner of the rectangle
+ * The coordinate system's being the screen, the top-right is
+ * the origin of rectangle \p r shifted by the width of \p r
+ * in the x-direction.
+ * @param r         a rectangle
+ * @return          the top-right coordinate (in screen orientation)
+ */
+static inline
+CGWPoint2D
+CGWRect2DTopRight(
+    CGWRect2D      r
+)
+{
+    r.origin.x += r.size.w;
+    return r.origin;
+}
+
+/**
+ * Get the bottom-left corner of the rectangle
+ * The coordinate system's being the screen, the bottom-left is
+ * the origin of rectangle \p r shifted by the height of \p r
+ * in the y-direction.
+ * @param r         a rectangle
+ * @return          the bottom-left coordinate (in screen orientation)
+ */
+static inline
+CGWPoint2D
+CGWRect2DBottomLeft(
+    CGWRect2D      r
+)
+{
+    r.origin.y += r.size.h;
+    return r.origin;
+}
+
+/**
+ * Get the bottom-right corner of the rectangle
+ * The coordinate system's being the screen, the bottom-right is
+ * the origin of rectangle \p r shifted by the width and height
+ * of \p r in the x- and y-direction, respectively.
+ * @param r         a rectangle
+ * @return          the bottom-left coordinate (in screen orientation)
+ */
+static inline
+CGWPoint2D
+CGWRect2DBottomRight(
+    CGWRect2D      r
+)
+{
+    r.origin.x += r.size.w;
+    r.origin.y += r.size.h;
+    return r.origin;
+}
+
+
+/**
+ * Create a CGWRect2D from component values
+ * A convenience function that manufactures a CGWRect2D
+ * structure from component coordinates and distances.
+ * @param x     x-coordinate of origin
+ * @param y     y-coordinate of origin
+ * @param w     width in the x-direction
+ * @param h     height in the y-direction
+ * @return      A CGWRect2D structure containing the values
+ */
+static inline
+CGWRect2D
+CGWRect2DMake(
+    float       x,
+    float       y,
+    float       w,
+    float       h
+)
+{
+    CGWRect2D   the_rect = { .origin.x = x, .origin.y = y,
+                             .size.w = fabs(w), .size.h = fabs(h) };
+    return the_rect;
+}
+
+/**
+ * Create a CGWRect2D from two points
+ * A convenience function that manufactures a CGWRect2D
+ * structure according to the coordinates of two
+ * opposing corners of the rectangle.
+ * @param p1    First corner
+ * @param p2    Opposing corner to p1
+ * @return      A CGWRect2D structure containing the
+ *              rectangle's origin and size
+ */
+static inline
+CGWRect2D
+CGWRect2DMakeWithPoints(
+    CGWPoint2D  p1,
+    CGWPoint2D  p2
+)
+{
+    float       dx = p2.x - p1.x;
+    float       dy = p2.y - p1.y;
+    
+    return CGWRect2DMake(
+        ( dx < 0.0f ) ? p2.x : p1.x,
+        ( dy < 0.0f ) ? p2.y : p1.y,
+        ( dx < 0.0f ) ? -dx : dx,
+        ( dy < 0.0f ) ? -dy : dy);
+}
+
+/**
+ * Does a rectangle contain a point?
+ * Determine if rectangle \p r contains the given
+ * point \p p.
+ * @param r     a rectangle
+ * @param p     the point to test
+ * @return      Boolean true if \p p is contained
+ *              by \p r
+ */
+static inline
+bool
+CGWRect2DContainsPoint(
+    CGWRect2D   r,
+    CGWPoint2D  p
+)
+{
+    float       dx = p.x - r.origin.x,
+                dy = p.y - r.origin.y;
+    return ((dx >= 0.0f) && (dx <= r.size.w) && (dy >= 0.0f) && (dy <= r.size.h)) ? true : false;
+}
+
+/**
+ * Do two rectangles overlap each other?
+ * Determine if the region occupied by rectangle \p r1
+ * intersects the region occupied by \p r2
+ * @param r1    a rectangle
+ * @param r2    another rectangle
+ * @return      Boolean true if \p r1 and \p r2
+ *              overlap
+ */
+bool CGWRect2DOverlapsRect(CGWRect2D r1, CGWRect2D r2);
+
+
+
+
+/**
+ * A circle
+ * A circle consists of an origin point and a radius.  The radius
+ * must be positive.
+ */
+typedef struct {
+    CGWPoint2D      origin;     /*!< the point at which the circle is centered */
+    float           radius;     /*!< the radius of the circle */
+} CGWCircle;
+
+/**
+ * Create a CGWCircle from component values
+ * A convenience function that manufactures a CGWCircle
+ * structure from component coordinates and radius.
+ * @param x     x-coordinate of origin
+ * @param y     y-coordinate of origin
+ * @param r     radius
+ * @return      A CGWCircle structure containing the values
+ */
+static inline
+CGWCircle
+CGWCircleMake(
+    float           x,
+    float           y,
+    float           r
+)
+{
+    CGWCircle       new_circle = {
+                        .origin.x = x,
+                        .origin.y = y,
+                        .radius = r
+                    };
+    return new_circle;
+}
+
+/**
+ * Does a circle contain a point?
+ * Determine if circle \p c contains the given
+ * point \p p.
+ * @param c     a circle
+ * @param p     the point to test
+ * @return      Boolean true if \p p is contained
+ *              by \p c
+ */
+static inline
+bool
+CGWCircleContainsPoint(
+    CGWCircle       c,
+    CGWPoint2D      p
+)
+{
+    float           dx = c.origin.x - p.x,
+                    dy = c.origin.y - p.y;
+    float           dist = sqrt(dx * dx + dy * dy);
+    
+    return ( dist <= c.radius );
+}
+
+/**
+ * Do two circles overlap each other?
+ * Determine if the region occupied by circle \p c1
+ * intersects the region occupied by \p c2
+ * @param c1    a circle
+ * @param c2    another circle
+ * @return      Boolean true if \p c1 and \p c2
+ *              overlap
+ */
+static inline
+bool
+CGWCircleOverlapsCircle(
+    CGWCircle       c1,
+    CGWCircle       c2
+)
+{
+    float           dx = c2.origin.x - c1.origin.x,
+                    dy = c2.origin.y - c1.origin.y;
+    float           dist = sqrt(dx * dx + dy * dy);
+    
+    return (dist <= c1.radius + c2.radius);
+}
+
+/**
+ * Do a circle and rectangle overlap?
+ * The point on the perimeter of the rectangle nearest to the
+ * center of the circle is found, and if it is ≤ the radius of the
+ * circle away from the circle's center, the two figures overlap.
+ * @param r         a rectangle
+ * @param c         a circle
+ * @return          boolean true if the two figures overlap,
+ *                  false otherwise
+ */
+bool CGWRect2DOverlapsCircle(CGWRect2D r, CGWCircle c);
+
+/**
+ * Alias circle-rect to the rect-circle function
+ * In case the programmer forgets which function is actually
+ * defined -- rect then circle vs. circle then rect -- this
+ * macro rewrites the latter to be the former.
+ * @param C         a circle
+ * @param R         a rectangle
+ * @return          boolean true if the two figures overlap,
+ *                  false otherwise
+ */
+#define CGWCircleOverlapsRect(C, R) CGWRect2DOverlapsCircle((R), (C))
+
+/**
+ * Is one rectangle completely contained inside another?
+ * Determine whether \p r2 is completely contained inside \p r1.
+ * @param r1        does this rectangle contain the other?
+ * @param r2        the other rectangle
+ * @return          boolean true if \p r2 is completely contained
+ *                  within \p r1
+ */
+static inline
+bool
+CGWRect2DContainsRect(
+    CGWRect2D   r1,
+    CGWRect2D   r2
+)
+{
+    // Check that all corners of r2 are within r1:
+    if ( ! CGWRect2DContainsPoint(r1, r2.origin) ) return false;
+    if ( ! CGWRect2DContainsPoint(r1, CGWRect2DTopRight(r2)) ) return false;
+    if ( ! CGWRect2DContainsPoint(r1, CGWRect2DBottomRight(r2)) ) return false;
+    if ( ! CGWRect2DContainsPoint(r1, CGWRect2DBottomLeft(r2)) ) return false;
+    return true;
+}
+
+/**
+ * Is a circle completely contained inside a rectangle?
+ * Determine whether \p c is completely contained inside \p r.
+ * @param r         does this rectangle contain the circle?
+ * @param c         the circle
+ * @return          boolean true if \p c is completely contained
+ *                  within \p r
+ */
+static inline
+bool
+CGWRect2DContainsCircle(
+    CGWRect2D   r,
+    CGWCircle   c
+)
+{
+    // Origin must be interior to r:
+    if ( ! CGWRect2DContainsPoint(r, c.origin) ) return false;
+    // Shift x- and y-extents of r such that c is at origin:
+    r.origin.x -= c.origin.x, r.origin.y -= c.origin.y;
+    // If any extent of r is now less than the radius, the circle
+    // is NOT contained:
+    if ( -r.origin.x < c.radius ) return false;
+    if ( r.origin.x + r.size.w < c.radius ) return false;
+    if ( -r.origin.y < c.radius ) return false;
+    if ( r.origin.y + r.size.h < c.radius ) return false;
+    return true;
+}
+
+/**
+ * Is one circle completely contained inside another?
+ * Determine whether \p c2 is completely contained inside \p c1.
+ * @param r1        does this circle contain the other?
+ * @param r2        the other circle
+ * @return          boolean true if \p c2 is completely contained
+ *                  within \p c1
+ */
+static inline
+bool
+CGWCircleContainsCircle(
+    CGWCircle       c1,
+    CGWCircle       c2
+)
+{
+    float           dx = c2.origin.x - c1.origin.x,
+                    dy = c2.origin.y - c1.origin.y;
+    float           dist = sqrt(dx * dx + dy * dy);
+    
+    if ( dist + c2.radius <= c1.radius  ) return true;
+    return false;
+}
+
+/**
+ * Is a rectangle completely contained inside a circle?
+ * Determine whether \p r is completely contained inside \p c.
+ * @param r         does this circle contain the rectangle?
+ * @param c         the rectangle
+ * @return          boolean true if \p r is completely contained
+ *                  within \p c
+ */
+static inline
+bool
+CGWCircleContainsRect(
+    CGWCircle   c,
+    CGWRect2D   r
+)
+{
+    // Check that all corners or r are within c:
+    if ( ! CGWCircleContainsPoint(c, r.origin) ) return false;
+    if ( ! CGWCircleContainsPoint(c, CGWRect2DTopRight(r)) ) return false;
+    if ( ! CGWCircleContainsPoint(c, CGWRect2DBottomRight(r)) ) return false;
+    if ( ! CGWCircleContainsPoint(c, CGWRect2DBottomLeft(r)) ) return false;
+    return true;
+}
+
+#ifdef HAVE_APPLE_AARCH64_NEON
+#   include "CGWGeom2D.asm/apple-aarch64.c"
 #endif
 
 #endif /* __CGWGEOM2D_H__ */
