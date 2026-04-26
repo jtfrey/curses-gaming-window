@@ -12,7 +12,7 @@
 
 CGWTileMapRef
 CGWTileMapCreate(
-    CGWSize             dimensions,
+    CGWSizeI2D          dimensions,
     CGWBitvector        options,
     CGWPaletteTablePtr  palette_table,
     ...
@@ -118,7 +118,7 @@ CGWTileMapCreateWithDecoder(
         return false;
     }
     
-    new_map = CGWTileMapCreate(CGWSizeMake(header.width, header.height), header.options, &palette_table);
+    new_map = CGWTileMapCreate(CGWSizeI2DMake(header.width, header.height), header.options, &palette_table);
     if ( ! new_map ) {
         fprintf(stderr, "ERROR:  Unable to allocate CGWTileMap\n");
         return false;

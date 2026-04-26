@@ -12,7 +12,7 @@
 #ifndef __CGWPIXELBUFFER_H__
 #define __CGWPIXELBUFFER_H__
 
-#include "CGWGeom.h"
+#include "CGWGeom2D.h"
 
 /**
  * Pointer to a pixel buffer clearing function
@@ -79,8 +79,8 @@ typedef enum {
  * called to advance to the next line.
  */
 typedef struct {
-    CGWSize                 dimensions;         /*!< the size of the grid */
-    CGWSize                 scaled_dimensions;  /*!< the size of the grid w/ pixel-scaling accounted */
+    CGWSizeI2D              dimensions;         /*!< the size of the grid */
+    CGWSizeI2D              scaled_dimensions;  /*!< the size of the grid w/ pixel-scaling accounted */
     CGWPixelBufferHScale    hscale;             /*!< the horizontal pixel-scaling */
     chtype                  *pixels;            /*!< pointer to the array of curses characters */
     chtype                  *pixels_end;        /*!< pointer to the character beyond the array */
@@ -109,7 +109,7 @@ typedef CGWPixelBuffer * CGWPixelBufferRef;
  * @return              the newly-initialized pixel buffer or
  *                      NULL on failure
  */
-CGWPixelBufferRef CGWPixelBufferCreate(CGWSize dimensions, CGWPixelBufferHScale hscale);
+CGWPixelBufferRef CGWPixelBufferCreate(CGWSizeI2D dimensions, CGWPixelBufferHScale hscale);
 
 /**
  * Destroy a pixel buffer
@@ -148,7 +148,7 @@ void CGWPixelBufferDestroy(CGWPixelBufferRef pixbuf);
  * @param curses_window     the window into which pixels are drawn
  * @param curses_origin     the top-left coordinate where drawing begins in the window
  */
-void CGWPixelBufferCursesDraw(CGWPixelBufferRef pixbuf, CGWRect *source, WINDOW *curses_window, CGWPoint curses_origin);
+void CGWPixelBufferCursesDraw(CGWPixelBufferRef pixbuf, CGWRectI2D *source, WINDOW *curses_window, CGWPointI2D curses_origin);
 
 /**
  * Clear the pixel buffer
@@ -166,7 +166,7 @@ void CGWPixelBufferCursesDraw(CGWPixelBufferRef pixbuf, CGWRect *source, WINDOW 
  * @param pixbuf        the pixel buffer
  * @param clear_rect    the rectangular area to clear
  */
-void CGWPixelBufferClearRect(CGWPixelBufferRef pixbuf, CGWRect clear_rect);
+void CGWPixelBufferClearRect(CGWPixelBufferRef pixbuf, CGWRectI2D clear_rect);
 
 /**
  * Normalize a rectangle to the pixel buffer bounds
@@ -176,9 +176,9 @@ void CGWPixelBufferClearRect(CGWPixelBufferRef pixbuf, CGWRect clear_rect);
  * corner.  The four pixels in the lower-right corner would be mapped
  * to the upper-right corner.
  * @param pixbuf        the pixel buffer
- * @param source        pointer fo the \ref CGWRect to be adjusted
+ * @param source        pointer fo the \ref CGWRectI2D to be adjusted
  */
-void CGWPixelBufferNormalizeRect(CGWPixelBufferRef pixbuf, CGWRect *source);
+void CGWPixelBufferNormalizeRect(CGWPixelBufferRef pixbuf, CGWRectI2D *source);
 
 /**
  * Context for iterating over a pixel buffer

@@ -12,7 +12,7 @@
 
 #include "CGWAttr.h"
 #include "CGWBitvector.h"
-#include "CGWGeom.h"
+#include "CGWGeom2D.h"
 #include "CGWPaletteTable.h"
 #include "CGWTileTable.h"
 #include "CGWTileCell.h"
@@ -48,7 +48,7 @@ enum {
  */
 typedef struct {
     CGWBitvector            options;        /*!< the tile table type, other options */
-    CGWSize                 dimensions;     /*!< the width vs. height of the tile map (in cells) */
+    CGWSizeI2D              dimensions;     /*!< the width vs. height of the tile map (in cells) */
     CGWPaletteTable         palette_table;  /*!< the color palette table associated with the map */
     union {
         CGWTileTableRef     base;           /*!< reference to the associated CGWTileTable */
@@ -80,7 +80,7 @@ typedef CGWTileMap * CGWTileMapRef;
  * @return                      a newly-initialized CGWTileMap reference or
  *                              NULL on error
  */
-CGWTileMapRef CGWTileMapCreate(CGWSize dimensions, CGWBitvector options, CGWPaletteTablePtr palette_table, ...);
+CGWTileMapRef CGWTileMapCreate(CGWSizeI2D dimensions, CGWBitvector options, CGWPaletteTablePtr palette_table, ...);
 
 /**
  * Destroy a CGWTileMap

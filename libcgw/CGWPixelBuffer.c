@@ -235,7 +235,7 @@ __CGWPixelBufferClearRect(
 
 CGWPixelBuffer*
 CGWPixelBufferCreate(
-    CGWSize                 dimensions,
+    CGWSizeI2D              dimensions,
     CGWPixelBufferHScale    hscale
 )
 {
@@ -293,7 +293,7 @@ CGWPixelBufferDestroy(
 void
 CGWPixelBufferClearRect(
     CGWPixelBuffer  *pixbuf,
-    CGWRect         clear_rect
+    CGWRectI2D      clear_rect
 )
 {
     size_t          n_char = clear_rect.size.w * pixbuf->hscale * clear_rect.size.h;
@@ -320,7 +320,7 @@ CGWPixelBufferClearRect(
 void
 CGWPixelBufferNormalizeRect(
     CGWPixelBufferRef   pixbuf,
-    CGWRect             *source
+    CGWRectI2D          *source
 )
 {
     /* Account for periodic boundary conditions in x and y: */
@@ -334,9 +334,9 @@ CGWPixelBufferNormalizeRect(
 void
 CGWPixelBufferCursesDraw(
     CGWPixelBufferRef   pixbuf,
-    CGWRect             *source,
+    CGWRectI2D          *source,
     WINDOW              *curses_window,
-    CGWPoint            curses_origin
+    CGWPointI2D         curses_origin
 )
 {
     chtype              *pixels = pixbuf->pixels;

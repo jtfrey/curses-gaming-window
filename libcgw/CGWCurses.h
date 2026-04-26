@@ -10,7 +10,7 @@
 #define __CGWCURSES_H__
 
 #include "CGWConfig.h"
-#include "CGWGeom.h"
+#include "CGWGeom2D.h"
 
 /** 
  * Curses "empty" character (transparent to background).
@@ -37,15 +37,15 @@ typedef enum {
  * pointer, the console dimensions are checked.  If the console is
  * at least the size in \p *minimum_size, additional library setup
  * functions are called and the console is cleared.
- * @param minimum_size      pass a \ref CGWSize indicating the
+ * @param minimum_size      pass a \ref CGWSizeI2D indicating the
  *                          minimum dimensions permissible; a width
  *                          or height of zero (0) indicates no minimum
- * @param out_console_size  pass a pointer to a \ref CGWSize to
+ * @param out_console_size  pass a pointer to a \ref CGWSizeI2D to
  *                          have the console dimensions returned
  * @return                  a value from the \ref CGWCursesInitStatus
  *                          enumeration
  */
-CGWCursesInitStatus CGWCursesInit(CGWSize minimum_size, CGWSize *out_console_size);
+CGWCursesInitStatus CGWCursesInit(CGWSizeI2D minimum_size, CGWSizeI2D *out_console_size);
 
 /**
  * Create a curses window
@@ -59,7 +59,7 @@ CGWCursesInitStatus CGWCursesInit(CGWSize minimum_size, CGWSize *out_console_siz
  * @return                  the new windows or NULL in case of
  *                          error
  */
-WINDOW* CGWCursesWindowCreate(CGWRect display_rect);
+WINDOW* CGWCursesWindowCreate(CGWRectI2D display_rect);
 
 /**
  * Destroy a curses window

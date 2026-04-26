@@ -1034,7 +1034,7 @@ typedef struct {
  */
 static inline
 CGWSizeI2D
-CCGWSizeI2DMake(
+CGWSizeI2DMake(
     unsigned int    w,
     unsigned int    h
 )

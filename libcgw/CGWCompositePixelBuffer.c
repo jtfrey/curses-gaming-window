@@ -12,7 +12,7 @@
 CGWCompositePixelBufferRef
 CGWCompositePixelBufferCreate(
     CGWBitvector    options,
-    CGWSize         display_size,
+    CGWSizeI2D      display_size,
     ...
 )
 {
@@ -55,7 +55,7 @@ CGWCompositePixelBufferCreate(
         i_layer = 0;
         while ( (pb = va_arg(argv, CGWPixelBuffer*)) ) {
             cpb->layers[i_layer].is_enabled = true;
-            cpb->layers[i_layer].display_rect = CGWRectMake(0, 0, display_size.w, display_size.h);
+            cpb->layers[i_layer].display_rect = CGWRectI2DMake(0, 0, display_size.w, display_size.h);
             cpb->layers[i_layer].pb = pb;
             i_layer++;
         }
@@ -80,7 +80,7 @@ void
 CGWCompositePixelBufferCursesDraw(
     CGWCompositePixelBufferRef  comp_pixbuf,
     WINDOW                      *curses_window,
-    CGWPoint                    curses_origin
+    CGWPointI2D                 curses_origin
 )
 {
     CGWPixelBuffer              *pb;

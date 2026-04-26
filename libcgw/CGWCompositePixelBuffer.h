@@ -24,7 +24,7 @@
  */
 typedef struct {
     bool            is_enabled;     /*!< include the layer in rendering if true */
-    CGWRect         display_rect;   /*!< area of the pixel buffer that will be
+    CGWRectI2D      display_rect;   /*!< area of the pixel buffer that will be
                                      *   composited with the other layers */
     CGWPixelBuffer  *pb;            /*!< the pixel buffer associated with the layer */
 } CGWCompositeLayer;
@@ -70,7 +70,7 @@ enum {
  */
 typedef struct {
     CGWBitvector        options;            /*!< behavioral options */
-    CGWSize             display_size;       /*!< the size of the visible region
+    CGWSizeI2D          display_size;       /*!< the size of the visible region
                                                  across all layers */
     unsigned int        n_layers;           /*!< the number of layers */
     unsigned int        n_enabled_layers;   /*!< the number of layers enabled */
@@ -104,7 +104,7 @@ typedef CGWCompositePixelBuffer * CGWCompositePixelBufferRef;
  * @return                  the new composite pixel buffer or
  *                          NULL on error
  */
-CGWCompositePixelBufferRef CGWCompositePixelBufferCreate(CGWBitvector options, CGWSize display_size, ...);
+CGWCompositePixelBufferRef CGWCompositePixelBufferCreate(CGWBitvector options, CGWSizeI2D display_size, ...);
 
 /**
  * Destroy a CGWCompositePixelBuffer
@@ -167,6 +167,6 @@ CGWCompositePixelBufferLayerSetEnabled(
  * @param curses_origin     window coordinate at which drawing
  *                          begins
  */
-void CGWCompositePixelBufferCursesDraw(CGWCompositePixelBufferRef comp_pixbuf, WINDOW *curses_window, CGWPoint curses_origin);
+void CGWCompositePixelBufferCursesDraw(CGWCompositePixelBufferRef comp_pixbuf, WINDOW *curses_window, CGWPointI2D curses_origin);
 
 #endif /* __CGWCOMPOSITEPIXELBUFFER_H__ */

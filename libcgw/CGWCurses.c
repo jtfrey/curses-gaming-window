@@ -12,8 +12,8 @@ const chtype CGWTransparentChar = (' ' | A_NORMAL);
 
 CGWCursesInitStatus
 CGWCursesInit(
-    CGWSize     minimum_size,
-    CGWSize     *out_console_size
+    CGWSizeI2D  minimum_size,
+    CGWSizeI2D  *out_console_size
 )
 {
     int         w, h;
@@ -49,7 +49,7 @@ CGWCursesInit(
 
 WINDOW*
 CGWCursesWindowCreate(
-    CGWRect     display_rect
+    CGWRectI2D  display_rect
 )
 {
     WINDOW      *w = newwin(display_rect.size.h,

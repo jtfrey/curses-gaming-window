@@ -390,7 +390,7 @@ main()
                 }
                     
                 CGWCursesInitStatus curses_rc;
-                CGWSize             minsize = CGWSizeMake(80, 24), actsize;
+                CGWSizeI2D          minsize = CGWSizeI2DMake(80, 24), actsize;
                 bool                color_ok;
                 
                 curses_rc = CGWCursesInit(minsize, &actsize);
@@ -404,9 +404,9 @@ main()
                 if ( color_ok ) {    
                     WINDOW                          *game_window;
                     CGWStats                        frame_stats = CGWStatsMake();
-                    CGWSize                         foreground_size = CGWSizeMake(actsize.w, 2 * actsize.h);
+                    CGWSizeI2D                      foreground_size = CGWSizeI2DMake(actsize.w, 2 * actsize.h);
                     CGWPixelBufferRef               foreground = CGWPixelBufferCreate(foreground_size, kCGWPixelBufferHScale2x);
-                    CGWSize                         background_size = actsize;
+                    CGWSizeI2D                      background_size = actsize;
                     CGWPixelBufferRef               background = CGWPixelBufferCreate(background_size, kCGWPixelBufferHScale1x);
                     CGWCompositePixelBufferRef      pixbuf = CGWCompositePixelBufferCreate(
                                                                     kCGWCompositePixelBufferOptionsShouldDestroyBuffers,
@@ -418,7 +418,8 @@ main()
                     FILE                            *logfptr = fopen("event.log", "w");
 #endif
 
-                    game_window = CGWCursesWindowCreate(CGWRectMake(0, 0, actsize.w, actsize.h));
+                    CGWCompositePixelBufferLayerSetEnabled(pixbuf, 1, false);
+                    game_window = CGWCursesWindowCreate(CGWRectI2DMake(0, 0, actsize.w, actsize.h));
                     if ( pixbuf ) {
                         CGWPixelBufferIterator  piter;
                         CGWTimingInterval       engine_timer = CGWTimingIntervalMakeWithFrequency(60.0);
@@ -427,7 +428,7 @@ main()
                         int                     palette = 0;
                         int                     pair_base = CGWPaletteTableMapToPairBase(palette);
                         
-                        CGWPixelBufferIteratorInit(background, CGWPointMake(0, 0), piter);
+                        CGWPixelBufferIteratorInit(background, CGWPointI2DMake(0, 0), piter);
                         for ( y = 0; y < background_size.h; y++ ) {
                             for ( x = 0; x < background_size.w; x++ ) {
                                 int         color = 1 + random() % 32;
@@ -437,7 +438,7 @@ main()
                             CGWPixelBufferIteratorNextLine(piter);
                         }
                         
-                        CGWPixelBufferIteratorInit(foreground, CGWPointMake(0, 0), piter);
+                        CGWPixelBufferIteratorInit(foreground, CGWPointI2DMake(0, 0), piter);
                         for ( y = 0; y < foreground_size.h; y++ ) {
                             for ( x = 0; x < foreground_size.w; x++ ) {
                                 int     c = (((foreground_size.h) - 1 - y) == (x / 6 + 12)) ? 1 : 
@@ -449,7 +450,7 @@ main()
                         }
                         
                         CGWCursesBeginUpdate(game_window);
-                        CGWCompositePixelBufferCursesDraw(pixbuf, game_window, CGWPointMake(0, 0));
+                        CGWCompositePixelBufferCursesDraw(pixbuf, game_window, CGWPointI2DMake(0, 0));
                         CGWCursesEndUpdates(game_window);
                         
                         CGWTimingIntervalStart(engine_timer);
@@ -516,7 +517,7 @@ main()
                                     }
                                 }
                                 if ( should_redraw ) {
-                                    CGWPixelBufferIteratorInit(foreground, CGWPointMake(0, 0), piter);
+                                    CGWPixelBufferIteratorInit(foreground, CGWPointI2DMake(0, 0), piter);
                                     for ( y = 0; y < foreground_size.h; y++ ) {
                                         for ( x = 0; x < foreground_size.w; x++ ) {
                                             int     c = (((foreground_size.h) - 1 - y) == (x / 6 + 12)) ? 1 : 
@@ -534,7 +535,7 @@ main()
                                     CGWTimingIntervalStart(frame_timer);
 #endif
                                     CGWCursesBeginUpdate(game_window);
-                                    CGWCompositePixelBufferCursesDraw(pixbuf, game_window, CGWPointMake(0, 0));
+                                    CGWCompositePixelBufferCursesDraw(pixbuf, game_window, CGWPointI2DMake(0, 0));
                                     CGWCursesEndUpdates(game_window);
                                     should_draw = false;
 #ifdef EVENT_LOGGING

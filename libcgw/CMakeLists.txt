@@ -126,7 +126,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Create the library target:
 set(LIBCGW_SOURCES
-        CGWUtil.c CGWMath.c CGWMath.s CGWGeom.c CGWGeom.s CGWCSGeom.c CGWFixedPrec.c CGWStats.c
+        CGWUtil.c CGWMath.c CGWMath.s CGWGeom2D.c CGWGeom2D.s CGWCSGeom2D.c
+        CGWFixedPrec.c CGWStats.c
         CGWDecoder.c CGWCurses.c
         CGWColor.c CGWPalette.c CGWPaletteTable.c CGWPaletteTableArray.c
         CGWTile.c CGWTileTable.c CGWMetaTileTable.c CGWTileMap.c
@@ -160,3 +161,4 @@ add_executable(turtletest
         CGWUtil.c CGWMath.c CGWMath.s CGWFixedPrec.c CGWGeom2D.c CGWGeom2D.s
         CGWTurtle2D.c
         turtletest.c)
+
