@@ -33,7 +33,7 @@ Commands occur as a single-word verb followed by zero or more mandatory argument
 
 | Command form | Explanantion |
 | :----------- | :----------- |
-| `reset` | the turtle is moved back to the origin, the color is reset, and the stylus is enabled |
+| `reset` | the turtle is moved back to the starting position (0.5, 0.5), the color is reset, and the stylus is enabled |
 | `pause` | wait for a single keypress before proceeding; this is often used at the end of a program because otherwise the simulator exists immediately |
 | `clear` | clear the screen |
 | `color++` | select the next color in the palette |
