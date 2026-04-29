@@ -4,59 +4,6 @@
  *
  * Commands are added to a text file -- by convention one per line -- and have
  * a form that has a mandatory word followed by a fixed number of arguments.
- *
- * reset                                the turtle is moved back to the origin, the
- *                                      color is reset, and the stylus is enabled
- *
- * pause                                wait for a single keypress before proceeding;
- *                                      this is often used at the end of a program
- *                                      because otherwise the simulator exists
- *                                      immediately
- *
- * clear                                clear the screen
- *
- * color++                              select the next color in the palette
- * color--                              select the previous color in the palette
- * color <idx>                          select the color at the given index <idx>;
- *                                      when <idx> exceeds the number of colors it
- *                                      wraps around
- *
- * drawing-delay <dt>                   wait the given number of seconds <dt> between
- *                                      drawing each pixel; defaults to 0.05
- *
- * stylus <1|0>                         enable (1) or disable (0) the stylus
- *
- * moveto <x> <y>                       alter the turtle's position to be (<x>, <y>)
- *                                      where the coordinate system runs from [0,1] in
- *                                      both axes
- * move <d>                             move the turtle the distance <d>; if the stylus
- *                                      is enabled pixels will be drawn
- *
- * turnto-<deg|rad> <a>                 rotate the turtle to angle <a>, where the choice
- *                                      or <deg|rad> in the command dictates which unit
- *                                      is associated with <a>
- * turn-<deg|rad> <a>                   rotate the turtle by <a> relative to it's current
- *                                      orientation, where the choice or <deg|rad> in the
- *                                      command dictates which unit is associated with <a>
- *
- * curve-<dev|rad> <r> <phi>            given the turtle's current position and direction,
- *                                      rotate the direction by 90° and move <r> away from
- *                                      the position to establish the center of a circle;
- *                                      then move the turtle through an arc of <a> on that
- *                                      circle
- * contracting-curve-<dev|rad> \        given the turtle's current position and direction,
- *     <r> <phi> <contrct>              rotate the direction by 90° and move <r> away from
- *                                      the position to establish the center of a circle;
- *                                      then move the turtle through an arc of <a> on that
- *                                      circle, contracting the circle's radius by a
- *                                      constant <contrct> for every radian of rotation
- * prop-contracting-curve-<dev|rad> \   given the turtle's current position and direction,
- *     <r> <phi> <contrct>              rotate the direction by 90° and move <r> away from
- *                                      the position to establish the center of a circle;
- *                                      then move the turtle through an arc of <a> on that
- *                                      circle, contracting the circle's radius by a
- *                                      constant <contrct> for every radian of rotation
- *
  */
 
 #include "CGWTurtle2D.h"
@@ -87,7 +34,7 @@ main(
     CGWPoint2D          pt;
     CGWTurtleRef        Yertle = NULL;
     short               colors_orig[30][3];
-    short               color_max = 1, n_color = 0, pair_max = 3, n_pair = 0;
+    short               color_max = 1, n_color = 0, pair_max = 1, n_pair = 0;
     int                 stylus_color = 3;
     int                 argi = 1;
     int                 rc = 0;
@@ -104,26 +51,30 @@ main(
     // Correction, we do want sychronous input available to us:
     nodelay(stdscr, FALSE);
     
-    // Colors 0 and 1 are black and white, respectively:
+    // Baseline colors:
+    //
+    //   1 = black
+    //   2 = white
+    //   3 = light gray
+    //   4 = med gray
+    //   5 = dark gray
+    //   6 = bright red
+    //   7 = bright green
+    //   8 = bright blue
+    //   9 = bright yellow
+    //  10 = bright purple
+    //  11 = bright teal
+    //  12 = med red
+    //  13 = med green
+    //  14 = med blue
+    //  15 = med yellow
+    //  16 = med purple
+    //  17 = med teal
     SAVE_COLOR(color_max), init_color(color_max++, 0, 0, 0);
     SAVE_COLOR(color_max), init_color(color_max++, 1000, 1000, 1000);
-    
-    // Additional colors starting at 3:
-    //
-    //   3 = med gray
-    //   4 = bright red
-    //   5 = bright green
-    //   6 = bright blue
-    //   7 = bright yellow
-    //   8 = bright purple
-    //   9 = bright teal
-    //  10 = med red
-    //  11 = med green
-    //  12 = med blue
-    //  13 = med yellow
-    //  14 = med purple
-    //  15 = med teal
+    SAVE_COLOR(color_max), init_color(color_max++, 250, 250, 250), n_color++;
     SAVE_COLOR(color_max), init_color(color_max++, 500, 500, 500), n_color++;
+    SAVE_COLOR(color_max), init_color(color_max++, 750, 750, 750), n_color++;
     SAVE_COLOR(color_max), init_color(color_max++, 1000, 0, 0), n_color++;
     SAVE_COLOR(color_max), init_color(color_max++, 0, 1000, 0), n_color++;
     SAVE_COLOR(color_max), init_color(color_max++, 0, 0, 1000), n_color++;
@@ -137,34 +88,35 @@ main(
     SAVE_COLOR(color_max), init_color(color_max++, 500, 0, 500), n_color++;
     SAVE_COLOR(color_max), init_color(color_max++, 0, 500, 500), n_color++;
     
-    // Pair 1:  black on black — our background color
-    init_pair(1, 1, 1);
-    // Pair 2:  white on black — for text
-    init_pair(2, 2, 1);
-    
     // Additional pairs with the colors defined above
     // as the color in both fore- and background
     // for a solid block:
     //
-    //   3 = med gray
-    //   4 = bright red
-    //   5 = bright green
-    //   6 = bright blue
-    //   7 = white
-    //   8 = bright yellow
-    //   9 = bright purple
-    //  10 = bright teal
-    //  11 = med red
-    //  12 = med green
-    //  13 = med blue
-    //  14 = med yellow
-    //  15 = med purple
-    //  16 = med teal
+    //   1 = black on black (our background color)
+    //   2 = white on black (for text)
+    //   3 = white
+    //   4 = light gray
+    //   5 = med gray
+    //   6 = dark gray
+    //   7 = bright red
+    //   8 = bright green
+    //   9 = bright blue
+    //  10 = bright yellow
+    //  11 = bright purple
+    //  12 = bright teal
+    //  13 = med red
+    //  14 = med green
+    //  15 = med blue
+    //  16 = med yellow
+    //  17 = med purple
+    //  18 = med teal
+    init_pair(pair_max++, 1, 1);
+    init_pair(pair_max++, 2, 1);
+    init_pair(pair_max++, 2, 2), n_pair++;
     init_pair(pair_max++, 3, 3), n_pair++;
     init_pair(pair_max++, 4, 4), n_pair++;
     init_pair(pair_max++, 5, 5), n_pair++;
     init_pair(pair_max++, 6, 6), n_pair++;
-    init_pair(pair_max++, 2, 2), n_pair++;
     init_pair(pair_max++, 7, 7), n_pair++;
     init_pair(pair_max++, 8, 8), n_pair++;
     init_pair(pair_max++, 9, 9), n_pair++;
@@ -174,6 +126,8 @@ main(
     init_pair(pair_max++, 13, 13), n_pair++;
     init_pair(pair_max++, 14, 14), n_pair++;
     init_pair(pair_max++, 15, 15), n_pair++;
+    init_pair(pair_max++, 16, 16), n_pair++;
+    init_pair(pair_max++, 17, 17), n_pair++;
     
     //
     // Create our turtle display to fill the curses screen.
@@ -227,6 +181,31 @@ main(
                     }
                     else if ( strcasecmp(command, "clear") == 0 ) {
                         clear();
+                    }
+                    else if ( strcasecmp(command, "add-color-rgb") == 0 ) {
+                        short           r, g, b;
+                        
+                        if ( fscanf(program_fptr, "%hd %hd %hd", &r, &g, &b) == 3 ) {
+                            if ( (r>=0 && r<=1000) && (g>=0 && g<=1000) && (b>=0 && b<=1000) ) {
+                                int         color_idx = color_max;
+                                
+                                SAVE_COLOR(color_max), init_color(color_max++, r, g, b), n_color++;
+                                init_pair(pair_max++, color_idx, color_idx), n_pair++;
+                            }
+                        }
+                    }
+                    else if ( strcasecmp(command, "add-color-hex") == 0 ) {
+                        unsigned int    packed_hex_color;
+                        
+                        if ( fscanf(program_fptr, "%X", &packed_hex_color) == 1 ) {
+                            int         r = (1000 * ((packed_hex_color & 0xFF0000) >> 16)) / 255,
+                                        g = (1000 * ((packed_hex_color & 0x00FF00) >> 8)) / 255,
+                                        b = (1000 * (packed_hex_color & 0x0000FF)) / 255;
+                            int         color_idx = color_max;
+                            
+                            SAVE_COLOR(color_max), init_color(color_max++, r, g, b), n_color++;
+                            init_pair(pair_max++, color_idx, color_idx), n_pair++;
+                        }
                     }
                     else if ( strcasecmp(command, "color++") == 0 ) {
                         stylus_color = 3 + ((stylus_color - 3 + 1) % n_pair);

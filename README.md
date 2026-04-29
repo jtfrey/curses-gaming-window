@@ -36,6 +36,8 @@ Commands occur as a single-word verb followed by zero or more mandatory argument
 | `reset` | the turtle is moved back to the starting position (0.5, 0.5), the color is reset, and the stylus is enabled |
 | `pause` | wait for a single keypress before proceeding; this is often used at the end of a program because otherwise the simulator exists immediately |
 | `clear` | clear the screen |
+| `add-color-rgb <r> <g> <b>` | create a new indexed color with the given `<r>`, `<g>`, and `<b>` intensities (which each run from 0 through 1000); new colors start at index 16 |
+| `add-color-hex <RRGGBB>` | create a new indexed color with the given hexadecimal 8-bit per channel value, e.g. `f0f0f0` for a light gray; new colors start at index 16 |
 | `color++` | select the next color in the palette |
 | `color--` | select the previous color in the palette |
 | `color <idx>` | select the color at the given index `<idx>`; when `<idx>` exceeds the number of colors it wraps around |
