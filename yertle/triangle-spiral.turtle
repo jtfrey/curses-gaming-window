@@ -1,0 +1,53 @@
+moveto 0.05 0.05
+move 0.90
+turn-deg 120.0
+color++
+move 0.85
+turn-deg 120.0
+color++
+move 0.80
+turn-deg 120.0
+color++
+move 0.75
+turn-deg 120.0
+color++
+move 0.70
+turn-deg 120.0
+color++
+move 0.65
+turn-deg 120.0
+color++
+move 0.60
+turn-deg 120.0
+color++
+move 0.55
+turn-deg 120.0
+color++
+move 0.50
+turn-deg 120.0
+color++
+move 0.45
+turn-deg 120.0
+color++
+move 0.40
+turn-deg 120.0
+color++
+move 0.35
+turn-deg 120.0
+color++
+move 0.30
+turn-deg 120.0
+color++
+move 0.25
+turn-deg 120.0
+color++
+move 0.20
+turn-deg 120.0
+color++
+move 0.15
+turn-deg 120.0
+color++
+move 0.10
+pause
+prop-contracting-curve-deg 0.4 -925.0 0.05
+pause

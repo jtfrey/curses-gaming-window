@@ -1,0 +1,60 @@
+moveto 0.15 0.75
+move 0.15
+stylus 0
+move -0.075
+stylus 1
+turnto-deg -90.0
+move 0.55
+curve-deg 0.05 -180.0
+
+color++
+
+stylus 0
+moveto 0.50 0.75
+stylus 1
+turnto-deg 180.0
+move 0.15
+turn-deg 90.0
+move 0.3
+turn-deg 90.0
+move 0.10
+turn-deg 180.0
+move 0.10
+turn-deg 90.0
+move 0.3
+turn-deg 90.0
+move 0.15
+
+color++
+
+stylus 0
+moveto 0.70 0.75
+stylus 1
+turnto-deg 180.0
+move 0.15
+turn-deg 90.0
+move 0.3
+turn-deg 90.0
+move 0.10
+turn-deg 180.0
+move 0.10
+turn-deg 90.0
+move 0.3
+
+color++
+
+stylus 0
+moveto 0.90 0.75
+stylus 1
+turnto-deg 180.0
+move 0.15
+turn-deg 90.0
+move 0.3
+turn-deg 90.0
+move 0.10
+turn-deg 180.0
+move 0.10
+turn-deg 90.0
+move 0.3
+
+pause

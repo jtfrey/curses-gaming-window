@@ -1,0 +1,2 @@
+add_subdirectory(matrixtest)
+add_subdirectory(geomtest)
