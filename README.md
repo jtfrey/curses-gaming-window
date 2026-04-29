@@ -55,21 +55,21 @@ There are several example `.turtle` scripts in the [yertle](./yertle) subdirecto
 
 The default colors available:
 
-| Index |  RGB definition  | Name          |
-| ----: | :--------------: | :------------ |
-|     0 | 1000, 1000, 1000 | white         |
-|     1 |  750,  750,  750 | light gray    |
-|     2 |  500,  500,  500 | medium gray   |
-|     3 |  250,  250,  250 | dark gray     |
-|     4 | 1000,    0,    0 | bright red    |
-|     5 |    0, 1000,    0 | bright green  |
-|     6 |    0,    0, 1000 | bright blue   |
-|     7 | 1000, 1000,    0 | bright yellow |
-|     8 | 1000,    0, 1000 | bright purple |
-|     9 |    0, 1000, 1000 | bright teal   |
-|    10 |  500,    0,    0 | medium red    |
-|    11 |    0,  500,    0 | medium green  |
-|    12 |    0,    0,  500 | medium blue   |
-|    13 |  500,  500,    0 | medium yellow |
-|    14 |  500,    0,  500 | medium purple |
-|    15 |    0,  500,  500 | medium teal   |
+| Index |  RGB definition  | Hex definition | Name          |
+| ----: | :--------------: | :------------: | :------------ |
+|     0 | 1000, 1000, 1000 |     FFFFFF     | white         |
+|     1 |  750,  750,  750 |     BFBFBF     | light gray    |
+|     2 |  500,  500,  500 |     7F7F7F     | medium gray   |
+|     3 |  250,  250,  250 |     3F3F3F     | dark gray     |
+|     4 | 1000,    0,    0 |     FF0000     | bright red    |
+|     5 |    0, 1000,    0 |     00FF00     | bright green  |
+|     6 |    0,    0, 1000 |     0000FF     | bright blue   |
+|     7 | 1000, 1000,    0 |     FFFF00     | bright yellow |
+|     8 | 1000,    0, 1000 |     FF00FF     | bright purple |
+|     9 |    0, 1000, 1000 |     00FFFF     | bright teal   |
+|    10 |  500,    0,    0 |     7F0000     | medium red    |
+|    11 |    0,  500,    0 |     007F00     | medium green  |
+|    12 |    0,    0,  500 |     00007F     | medium blue   |
+|    13 |  500,  500,    0 |     7F7F00     | medium yellow |
+|    14 |  500,    0,  500 |     7F007F     | medium purple |
+|    15 |    0,  500,  500 |     007F7F     | medium teal   |
