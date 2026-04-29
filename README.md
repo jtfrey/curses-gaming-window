@@ -40,13 +40,13 @@ Commands occur as a single-word verb followed by zero or more mandatory argument
 | `color--` | select the previous color in the palette |
 | `color <idx>` | select the color at the given index `<idx>`; when `<idx>` exceeds the number of colors it wraps around |
 | `drawing-delay <dt>` | wait the given number of seconds `<dt>` between drawing each pixel; defaults to 0.05 |
-| `stylus <1|0>` | enable (1) or disable (0) the stylus |
+| `stylus <1\|0>` | enable (1) or disable (0) the stylus |
 | `moveto <x> <y>` | alter the turtle's position (without drawing) to be (`<x>`, `<y>`) where the coordinate system runs from [0,1] in both axes |
 | `move <d>` | move the turtle the distance `<d>`; if the stylus is enabled pixels will be drawn |
-| `turnto-<deg|rad> <a>` | rotate the turtle to angle `<a>`, where the choice of `<deg|rad>` in the command dictates which unit is associated with `<a>` |
-| `turn-<deg|rad> <a>` | rotate the turtle by `<a>` relative to it's current orientation, where the choice or `<deg|rad>` in the command dictates which unit is associated with `<a>` |
-| `curve-<dev|rad> <r> <phi>` | given the turtle's current position and direction, rotate the direction by 90° and move `<r>` away from the position to establish the center of a circle; then move the turtle through an arc of `<a>` on that circle |
-| `contracting-curve-<dev|rad> <r> <phi> <contrct>` | given the turtle's current position and direction, rotate the direction by 90° and move `<r>` away from the position to establish the center of a circle; then move the turtle through an arc of `<phi>` on that circle, contracting the circle's radius by a constant `<contrct>` for every radian of rotation |
-| `prop-contracting-curve-<dev|rad> <r> <phi> <contrct>` | given the turtle's current position and direction, rotate the direction by 90° and move `<r>` away from the position to establish the center of a circle; then move the turtle through an arc of `<a>` on that circle, contracting the circle's radius by a constant `<contrct>` for every radian of rotation |
+| `turnto-<deg\|rad> <a>` | rotate the turtle to angle `<a>`, where the choice of `<deg\|rad>` in the command dictates which unit is associated with `<a>` |
+| `turn-<deg\|rad> <a>` | rotate the turtle by `<a>` relative to it's current orientation, where the choice or `<deg\|rad>` in the command dictates which unit is associated with `<a>` |
+| `curve-<dev\|rad> <r> <phi>` | given the turtle's current position and direction, rotate the direction by 90° and move `<r>` away from the position to establish the center of a circle; then move the turtle through an arc of `<a>` on that circle |
+| `contracting-curve-<dev\|rad> <r> <phi> <contrct>` | given the turtle's current position and direction, rotate the direction by 90° and move `<r>` away from the position to establish the center of a circle; then move the turtle through an arc of `<phi>` on that circle, contracting the circle's radius by a constant `<contrct>` for every radian of rotation |
+| `prop-contracting-curve-<dev\|rad> <r> <phi> <contrct>` | given the turtle's current position and direction, rotate the direction by 90° and move `<r>` away from the position to establish the center of a circle; then move the turtle through an arc of `<a>` on that circle, contracting the circle's radius by a constant `<contrct>` for every radian of rotation |
 
 There are several example `.turtle` scripts in the [yertle](./yertle) subdirectory.
