@@ -1,4 +1,14 @@
+#
+# yertle turtle program to draw the letters J E F F
+#
+
+# Start toward the left edge and near the top of the display region:
 moveto 0.15 0.75
+
+#
+# The "J" is drawn in color 7...
+#
+color 7
 move 0.15
 stylus 0
 move -0.075
@@ -7,12 +17,17 @@ turnto-deg -90.0
 move 0.55
 curve-deg 0.05 -180.0
 
-color++
-
+# Turn the stylus off and move to the right side of the top stroke
+# of the "E" then do a 180° turn; then turn the stylus back on:
 stylus 0
 moveto 0.50 0.75
-stylus 1
 turnto-deg 180.0
+stylus 1
+
+#
+# The "E" in the next color
+#
+color++
 move 0.15
 turn-deg 90.0
 move 0.3
@@ -25,12 +40,17 @@ move 0.3
 turn-deg 90.0
 move 0.15
 
-color++
-
+# Turn the stylus off and move to the right side of the top stroke
+# of the first "F" then do a 180° turn; then turn the stylus back on:
 stylus 0
 moveto 0.70 0.75
-stylus 1
 turnto-deg 180.0
+stylus 1
+
+# 
+# The first "F" in the next color
+#
+color++
 move 0.15
 turn-deg 90.0
 move 0.3
@@ -41,12 +61,17 @@ move 0.10
 turn-deg 90.0
 move 0.3
 
-color++
-
+# Turn the stylus off and move to the right side of the top stroke
+# of the second "F" then do a 180° turn; then turn the stylus back on:
 stylus 0
 moveto 0.90 0.75
-stylus 1
 turnto-deg 180.0
+stylus 1
+
+#
+# The second "F" in the next color
+#
+color++
 move 0.15
 turn-deg 90.0
 move 0.3
@@ -57,4 +82,6 @@ move 0.10
 turn-deg 90.0
 move 0.3
 
+# Wait for a keypress then exit
 pause
+

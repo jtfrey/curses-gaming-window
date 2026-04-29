@@ -199,7 +199,14 @@ main(
                 char        command[32];
                 
                 if ( fscanf(program_fptr, "%30s", command) == 1 ) {
-                    if ( strcasecmp(command, "reset") == 0 ) {
+                    if ( (strcmp(command, "#") == 0) || (strcmp(command, "//") == 0) ) {
+                        // Comment line, read until a newline is encountered:
+                        while ( ! feof(program_fptr) ) {
+                            char        c = fgetc(program_fptr);
+                            if ( (c == '\n') || (c == '\r') || (c == '\0') ) break;
+                        }
+                    }
+                    else if ( strcasecmp(command, "reset") == 0 ) {
                         CGWTurtleStateReset(Yertle);
                         CGWTurtleStateSetStylusIsOn(Yertle, true);
                         stylus_color = 3;
