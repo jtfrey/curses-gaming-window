@@ -3,10 +3,10 @@
 #
 
 # Add our colors:
-add-color 4428bc   # 16
-add-color 6844fc   # 17
-add-color 9878f8   # 18
-add-color d8b8f8   # 19
+add-color-hex 4428bc   # 16
+add-color-hex 6844fc   # 17
+add-color-hex 9878f8   # 18
+add-color-hex d8b8f8   # 19
 
 # Start toward the left edge and near the top of the display region:
 moveto 0.15 0.75
