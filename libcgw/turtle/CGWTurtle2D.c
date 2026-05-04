@@ -347,8 +347,8 @@ __CGWTurtleCalculateResolutionAndRanges(
     CGWTurtle       *Yertle
 )
 {
-    float           res_x = 1.0f / (float)Yertle->coordinates.screen_region.size.w;
-    float           res_y = 1.0f / (float)Yertle->coordinates.screen_region.size.h;
+    float           res_x = 1.0f / (float)(Yertle->coordinates.screen_region.size.w - 1);
+    float           res_y = 1.0f / (float)(Yertle->coordinates.screen_region.size.h - 1);
     
     Yertle->coordinates.resolution.x = res_x;
     Yertle->coordinates.resolution.y = res_y;
@@ -392,14 +392,14 @@ __CGWTurtleScreenCoordinateApplyPeriodicity(
     c = p.x - bounds.origin.x;
     if ( c < 0 )
         p_out.x = bounds.origin.x + bounds.size.w + c;
-    else if ( c > bounds.size.w )
+    else if ( c >= bounds.size.w )
         p_out.x = bounds.origin.x + (c - bounds.size.w);
     else
         p_out.x = p.x;
     c = p.y - bounds.origin.y;
     if ( c < 0 )
         p_out.y = bounds.origin.y + bounds.size.h + c;
-    else if ( c > bounds.size.h )
+    else if ( c >= bounds.size.h )
         p_out.y = bounds.origin.y + (c - bounds.size.h);
     else
         p_out.y = p.y;
@@ -432,9 +432,9 @@ __CGWTurtleCoordinateTurtleToScreen(
 )
 {
     CGWPointI2D     s = {
-        .x = roundf((float)Yertle->coordinates.screen_region.size.w * (float)t.x + \
+        .x = roundf((float)(Yertle->coordinates.screen_region.size.w - 1) * (float)t.x + \
                                         (float)Yertle->coordinates.screen_region.origin.x),
-        .y = roundf((float)Yertle->coordinates.screen_region.size.h * (1.0f - (float)t.y) + \
+        .y = roundf((float)(Yertle->coordinates.screen_region.size.h - 1) * (1.0f - (float)t.y) + \
                                         (float)Yertle->coordinates.screen_region.origin.y)
     };
     return s;
@@ -468,6 +468,19 @@ __CGWTurtleAngleForPoints(
     float           dx = (p2.x - p1.x),
                     dy = (p2.y - p1.y);
     float           theta = atan2(dy, dx);
+    
+    if ( fabs(theta - M_PI) < 1e-6 ) return -M_PI;
+    return theta;
+}
+
+//
+
+float
+__CGWTurtleAngleForDp(
+    CGWPoint2D      dp
+)
+{
+    float           theta = atan2(dp.y, dp.x);
     
     if ( fabs(theta - M_PI) < 1e-6 ) return -M_PI;
     return theta;
@@ -628,6 +641,237 @@ __CGWTurtleEmitLine(
             }
         }
     }
+    CGWTDBG("DONE LINE <%g, %g>\n", p1.x, p1.y);
+    draw_fn(Yertle, __CGWTurtleCoordinateTurtleToScreen(Yertle, p1));
+    return p1;
+}
+
+//
+
+static
+bool
+__CGWTurtlePointCheckBoundaryEndPoint(
+    CGWTurtle           *Yertle,
+    CGWPoint2D          *p,
+    CGWPoint2D          dp,
+    CGWPoint2D          *new_direction
+)
+{
+    // Check left or right edge:
+    if ( (p->x < Yertle->coordinates.ranges.x_zero) || (p->x > Yertle->coordinates.ranges.x_one) ) {
+        // What kind of edge?
+        switch ( CGWTurtleBoundsType(Yertle->flags, X) ) {
+            case kCGWTurtleOptionsXBoundsHardWall: {
+                if ( fabs(dp.y) < Yertle->coordinates.ranges.y_zero ) {
+                    // Horizontal, stop dead:
+                    *new_direction = CGWPoint2DOrigin;
+                    return true;
+                }
+                *p = CGWPoint2DMake((p->x < Yertle->coordinates.ranges.x_zero) ? 0.0f : 1.0f, p->y);
+                if ( dp.y < 0 ) {
+                    // Headed toward the origin:
+                    *new_direction = CGWPoint2DMake(0.0f, -1.0f);
+                    return true;
+                }
+                // Headed away from the origin:
+                *new_direction = CGWPoint2DMake(0.0f, 1.0f);
+                return true;
+            }
+            case kCGWTurtleOptionsXBoundsElastic: {
+                // Reflect the slope vector across the y-axis and normalize:
+                float           l_dp = CGWPoint2DNormL2(dp);
+                
+                *p = CGWPoint2DMake((p->x < Yertle->coordinates.ranges.x_zero) ? 0.0f : 1.0f, p->y);
+                *new_direction = CGWPoint2DMake(-dp.x/l_dp, dp.y/l_dp);
+                return true;
+            }
+            case kCGWTurtleOptionsXBoundsPeriodic:
+                // We don't do anything with periodic bounds
+                break;
+        }
+    }
+    // Check top or bottom edge:
+    else if ( (p->y < Yertle->coordinates.ranges.y_zero) || (p->y > Yertle->coordinates.ranges.y_one) ) {
+        // What kind of edge?
+        switch ( CGWTurtleBoundsType(Yertle->flags, Y) ) {
+            case kCGWTurtleOptionsYBoundsHardWall: {
+                if ( fabs(dp.x) < Yertle->coordinates.ranges.x_zero ) {
+                    // Vertical, stop dead:
+                    *new_direction = CGWPoint2DOrigin;
+                    return true;
+                }
+                *p = CGWPoint2DMake(p->x, (p->y < Yertle->coordinates.ranges.y_zero) ? 0.0f : 1.0f);
+                if ( dp.x < 0 ) {
+                    // Headed toward the origin:
+                    *new_direction = CGWPoint2DMake(-1.0f, 0.0f);
+                    return true;
+                }
+                // Headed away from the origin:
+                *new_direction = CGWPoint2DMake(1.0f, 0.0f);
+                return true;
+            }
+            case kCGWTurtleOptionsYBoundsElastic: {
+                // Reflect the slope vector across the x-axis and normalize:
+                float           l_dp = CGWPoint2DNormL2(dp);
+                
+                *p = CGWPoint2DMake(p->x, (p->y < Yertle->coordinates.ranges.y_zero) ? 0.0f : 1.0f);
+                *new_direction = CGWPoint2DMake(dp.x/l_dp, -dp.y/l_dp);
+                return true;
+            }
+            case kCGWTurtleOptionsYBoundsPeriodic:
+                // We don't do anything with periodic bounds
+                break;
+        }
+    }
+    return false;
+}
+    
+//
+
+static
+CGWPoint2D
+__CGWTurtleEmitLineWithBoundsChecks(
+    CGWTurtle               *Yertle,
+    CGWPoint2D              p0,
+    CGWPoint2D              p1,
+    bool                    *was_wall_hit,
+    CGWPoint2D              *final_direction
+)
+{
+    CGWTurtleDrawPointFn    draw_fn;
+    float                   dx = p1.x - p0.x,
+                            dy = p1.y - p0.y;
+    CGWPoint2D              dp = CGWPoint2DMake(dx, dy);\
+    
+    draw_fn = Yertle->event_observers[kCGWTurtleEventDrawPixel].observer ? __CGWTurtleDrawPointAndSendEvent : __CGWTurtleDrawPoint;
+    
+    CGWTDBG("EMIT LINE (%g, %g) -> (%g, %g)\n", p0.x, p0.y, p1.x, p1.y);
+    
+    // If p0 hasn't yet been drawn, better do so now:
+    draw_fn(Yertle, __CGWTurtleCoordinateTurtleToScreen(Yertle, p0));
+    
+    // If dy = 0, it's a horizontal line and we just move through
+    // each coordinate p0.x through p1.x:
+    if ( fabs(dy) < Yertle->coordinates.resolution.y ) {
+        if ( dx < 0.0f ) {
+            p0.x -= Yertle->coordinates.resolution.x;
+            while ( p0.x >= p1.x ) {
+                CGWTDBG("[HX-] %g >= %g :: <%g, %g>  ", p1.x, p0.x, p0.x, p0.y);
+                draw_fn(Yertle, __CGWTurtleCoordinateTurtleToScreen(Yertle, p0));
+                p0.x -= Yertle->coordinates.resolution.x;
+                if ( __CGWTurtlePointCheckBoundaryEndPoint(Yertle, &p0, dp, final_direction) ) {
+                    *was_wall_hit = true;
+                    return p0;
+                }
+            }
+        } else {
+            p0.x += Yertle->coordinates.resolution.x;
+            while ( p1.x >= p0.x ) {
+                CGWTDBG("[HX+] %g >= %g :: <%g, %g>  ", p1.x, p0.x, p0.x, p0.y);
+                draw_fn(Yertle, __CGWTurtleCoordinateTurtleToScreen(Yertle, p0));
+                p0.x += Yertle->coordinates.resolution.x;
+                if ( __CGWTurtlePointCheckBoundaryEndPoint(Yertle, &p0, dp, final_direction) ) {
+                    *was_wall_hit = true;
+                    return p0;
+                }
+            }
+        }
+    }
+    // If dx = 0, it's a vertical line and we just move through
+    // each coordinate p0.y through p1.y:
+    else if ( fabs(dx) < Yertle->coordinates.resolution.x ) {
+        if ( dy < 0.0f ) {
+            p0.y -= Yertle->coordinates.resolution.y;
+            while ( p0.y >= p1.y ) {
+                CGWTDBG("[VY-] %g >= %g :: <%g, %g>  ", p1.y, p0.y, p0.x, p0.y);
+                draw_fn(Yertle, __CGWTurtleCoordinateTurtleToScreen(Yertle, p0));
+                p0.y -= Yertle->coordinates.resolution.y;
+                if ( __CGWTurtlePointCheckBoundaryEndPoint(Yertle, &p0, dp, final_direction) ) {
+                    *was_wall_hit = true;
+                    return p0;
+                }
+            }
+        } else {
+            p0.y += Yertle->coordinates.resolution.y;
+            while ( p1.y >= p0.y ) {
+                CGWTDBG("[VY+] %g >= %g :: <%g, %g>  ", p1.y, p0.y, p0.x, p0.y);
+                draw_fn(Yertle, __CGWTurtleCoordinateTurtleToScreen(Yertle, p0));
+                p0.y += Yertle->coordinates.resolution.y;
+                if ( __CGWTurtlePointCheckBoundaryEndPoint(Yertle, &p0, dp, final_direction) ) {
+                    *was_wall_hit = true;
+                    return p0;
+                }
+            }
+        }
+    }
+    else {
+        // The turtle needs to move dx pixels horizontally and dy pixels
+        // vertically.  The one with the smaller absolute value will be
+        // placed in the numerator of the slope and the x- or y-direction
+        // traversed in relation to that slope.
+        if ( fabs(dx) >= fabs(dy) ) {
+            // Y is smaller:
+            float   ddy = Yertle->coordinates.resolution.x * (dy / dx);
+            if ( dx < 0 ) {
+                p0.x -= Yertle->coordinates.resolution.x;
+                p0.y -= ddy;
+                 while ( p0.x >= p1.x ) {
+                    CGWTDBG("[ X-] %g >= %g :: <%g, %g>  ", p1.x, p0.x, p0.x, p0.y);
+                    draw_fn(Yertle, __CGWTurtleCoordinateTurtleToScreen(Yertle, p0));
+                    p0.x -= Yertle->coordinates.resolution.x;
+                    p0.y -= ddy;
+                    if ( __CGWTurtlePointCheckBoundaryEndPoint(Yertle, &p0, dp, final_direction) ) {
+                        *was_wall_hit = true;
+                        return p0;
+                    }
+                }
+            } else {
+                p0.x += Yertle->coordinates.resolution.x;
+                p0.y += ddy;
+                while ( p1.x >= p0.x ) {
+                    CGWTDBG("[ X+] %g >= %g :: <%g, %g>  ", p1.x, p0.x, p0.x, p0.y);
+                    draw_fn(Yertle, __CGWTurtleCoordinateTurtleToScreen(Yertle, p0));
+                    p0.x += Yertle->coordinates.resolution.x;
+                    p0.y += ddy;
+                    if ( __CGWTurtlePointCheckBoundaryEndPoint(Yertle, &p0, dp, final_direction) ) {
+                        *was_wall_hit = true;
+                        return p0;
+                    }
+                }
+            }
+        } else {
+            // X is smaller:
+            float   ddx = Yertle->coordinates.resolution.y * (dx / dy);
+            if ( dy < 0 ) {
+                p0.y -= Yertle->coordinates.resolution.y;
+                p0.x -= ddx;
+                while ( p0.y >= p1.y ) {
+                    CGWTDBG("[ Y-] %g >= %g :: <%g, %g>  ", p1.y, p0.y, p0.x, p0.y);
+                    draw_fn(Yertle, __CGWTurtleCoordinateTurtleToScreen(Yertle, p0));
+                    p0.y -= Yertle->coordinates.resolution.y;
+                    p0.x -= ddx;
+                    if ( __CGWTurtlePointCheckBoundaryEndPoint(Yertle, &p0, dp, final_direction) ) {
+                        *was_wall_hit = true;
+                        return p0;
+                    }
+                }
+            } else {
+                p0.y += Yertle->coordinates.resolution.y;
+                p0.x += ddx;
+                while ( p1.y >= p0.y ) {
+                    CGWTDBG("[ Y+] %g >= %g :: <%g, %g>  ", p1.y, p0.y, p0.x, p0.y);
+                    draw_fn(Yertle, __CGWTurtleCoordinateTurtleToScreen(Yertle, p0));
+                    p0.y += Yertle->coordinates.resolution.y;
+                    p0.x += ddx;
+                    if ( __CGWTurtlePointCheckBoundaryEndPoint(Yertle, &p0, dp, final_direction) ) {
+                        *was_wall_hit = true;
+                        return p0;
+                    }
+                }
+            }
+        }
+    }
+    *was_wall_hit = false;
     CGWTDBG("DONE LINE <%g, %g>\n", p1.x, p1.y);
     draw_fn(Yertle, __CGWTurtleCoordinateTurtleToScreen(Yertle, p1));
     return p1;
@@ -1351,6 +1595,9 @@ CGWTurtleActionCurve(
                     dphi = (dphi_x < dphi_y) ? dphi_x : dphi_y;
                     
         while ( phi < 0.0f ) {
+            bool        was_wall_hit;
+            CGWPoint2D  line_end, final_direction;
+            
             // Limit to the minimum-magnitude of dphi or whatever's left of phi:
             if ( fabs(phi) < fabs(dphi) ) dphi = -phi;
             
@@ -1369,7 +1616,17 @@ CGWTurtleActionCurve(
 
             CGWTDBG("pt' = <%g, %g>; pt = <%g, %g>\n", pt_prime.x, pt_prime.y, pt.x ,pt.y);
 
-            __CGWTurtleEmitLine(Yertle, pt, pt_prime);
+            line_end = __CGWTurtleEmitLineWithBoundsChecks(Yertle, pt, pt_prime, &was_wall_hit, &final_direction);
+            if ( was_wall_hit ) {
+                float           rem_dist = fabs(pp.r * phi);
+                CGWPoint2D      p_end = CGWPoint2DScaledSum(line_end, rem_dist, final_direction);
+                
+                // Reset the turtle's direction:
+                CGWTurtleStateSetPosition(Yertle, line_end);
+                CGWTurtleStateSetAngle(Yertle, __CGWTurtleAngleForDp(final_direction));
+                __CGWTurtleGeneratePath(Yertle, p_end);
+                return;
+            }
             pt = pt_prime;
         }
     } else {
@@ -1378,6 +1635,9 @@ CGWTurtleActionCurve(
                     dphi = (dphi_x < dphi_y) ? dphi_x : dphi_y;
                     
         while ( phi > 0.0f ) {
+            bool        was_wall_hit;
+            CGWPoint2D  line_end, final_direction;
+            
             // Limit to the minimum-magnitude of dphi or whatever's left of phi:
             if ( fabs(phi) < fabs(dphi) ) dphi = phi;
             
@@ -1396,7 +1656,17 @@ CGWTurtleActionCurve(
 
             CGWTDBG("pt' = <%g, %g>; pt = <%g, %g>\n", pt_prime.x, pt_prime.y, pt.x ,pt.y);
 
-            __CGWTurtleEmitLine(Yertle, pt, pt_prime);
+            line_end = __CGWTurtleEmitLineWithBoundsChecks(Yertle, pt, pt_prime, &was_wall_hit, &final_direction);
+            if ( was_wall_hit ) {
+                float           rem_dist = fabs(pp.r * phi);
+                CGWPoint2D      p_end = CGWPoint2DScaledSum(line_end, rem_dist, final_direction);
+                
+                // Reset the turtle's direction:
+                CGWTurtleStateSetPosition(Yertle, line_end);
+                CGWTurtleStateSetAngle(Yertle, __CGWTurtleAngleForDp(final_direction));
+                __CGWTurtleGeneratePath(Yertle, p_end);
+                return;
+            }
             pt = pt_prime;
         }
     }
@@ -1443,6 +1713,8 @@ CGWTurtleActionCurveAndContract(
         
     if ( phi < 0.0f ) {
         while ( pp.r > 0.0f && phi < 0.0f ) {
+            bool        was_wall_hit;
+            CGWPoint2D  line_end, final_direction;
             float       dphi_x = atan2f(pp.r, Yertle->coordinates.resolution.x),
                         dphi_y = atan2f(Yertle->coordinates.resolution.y, pp.r),
                         dphi = (dphi_x < dphi_y) ? dphi_x : dphi_y;
@@ -1470,11 +1742,30 @@ CGWTurtleActionCurveAndContract(
 
             CGWTDBG("pt' = <%g, %g>; pt = <%g, %g>\n", pt_prime.x, pt_prime.y, pt.x ,pt.y);
 
-            __CGWTurtleEmitLine(Yertle, pt, pt_prime);
+            line_end = __CGWTurtleEmitLineWithBoundsChecks(Yertle, pt, pt_prime, &was_wall_hit, &final_direction);
+            if ( was_wall_hit ) {
+                float           rem_dist;
+                CGWPoint2D      p_end;
+                
+                
+                if ( is_proportional_to_r )
+                    rem_dist = fabs(pp.r * (1.0f - pow((1.0f - dr_per_radian), fabs(phi))) / logf(1.0f - dr_per_radian));
+                else
+                    rem_dist = fabs(0.5f * dr_per_radian * phi * phi - pp.r * phi);
+                p_end = CGWPoint2DScaledSum(line_end, rem_dist, final_direction);
+                    
+                // Reset the turtle's direction:
+                CGWTurtleStateSetPosition(Yertle, line_end);
+                CGWTurtleStateSetAngle(Yertle, __CGWTurtleAngleForDp(final_direction));
+                __CGWTurtleGeneratePath(Yertle, p_end);
+                return;
+            }
             pt = pt_prime;
         }
     } else {        
         while ( pp.r > 0.0f && phi > 0.0f ) {
+            bool        was_wall_hit;
+            CGWPoint2D  line_end, final_direction;
             float       dphi_x = atan2f(pp.r, Yertle->coordinates.resolution.x),
                         dphi_y = atan2f(Yertle->coordinates.resolution.y, pp.r),
                         dphi = (dphi_x < dphi_y) ? dphi_x : dphi_y;
@@ -1502,7 +1793,23 @@ CGWTurtleActionCurveAndContract(
 
             CGWTDBG("pt' = <%g, %g>; pt = <%g, %g>\n", pt_prime.x, pt_prime.y, pt.x ,pt.y);
 
-            __CGWTurtleEmitLine(Yertle, pt, pt_prime);
+            line_end = __CGWTurtleEmitLineWithBoundsChecks(Yertle, pt, pt_prime, &was_wall_hit, &final_direction);
+            if ( was_wall_hit ) {
+                float           rem_dist;
+                CGWPoint2D      p_end;
+                
+                if ( is_proportional_to_r )
+                    rem_dist = fabs(pp.r * (1.0f - pow((1.0f - dr_per_radian), fabs(phi))) / logf(1.0f - dr_per_radian));
+                else
+                    rem_dist = fabs(pp.r * phi - 0.5f * dr_per_radian * phi * phi);
+                p_end = CGWPoint2DScaledSum(line_end, rem_dist, final_direction);
+                
+                // Reset the turtle's direction:
+                CGWTurtleStateSetPosition(Yertle, line_end);
+                CGWTurtleStateSetAngle(Yertle, __CGWTurtleAngleForDp(final_direction));
+                __CGWTurtleGeneratePath(Yertle, p_end);
+                return;
+            }
             pt = pt_prime;
         }
     }

@@ -73,3 +73,42 @@ The default colors available:
 |    13 |  500,  500,    0 |     7F7F00     | medium yellow |
 |    14 |  500,    0,  500 |     7F007F     | medium purple |
 |    15 |    0,  500,  500 |     007F7F     | medium teal   |
+
+One or more scripts can be run by passing their paths to the `yertle` program:
+
+```
+$ yertle/yertle --help
+usage:
+
+    yertle/yertle  {options} <turtle-script> {{options} <turtle-script> ...}
+
+  options:
+
+    --help/-h                      show this help
+    --x-bounds/-x <bounds-type>    set the type of boundary for the left
+                                   and right edges (default: hardwall)
+    --y-bounds/-y <bounds-type>    set the type of boundary for the top
+                                   and bottom edges (default: hardwall)
+    --auto-clear/-c                force a screen clear between scripts
+    --auto-pause/-p                force a pause command between scripts
+    --no-default-colors/-n         do not register the default color
+                                   palette
+
+    <bounds-type> = hardwall|elastic|periodic
+
+        hardwall:      the turtle will stop (head-on collision) or slide
+                       along the wall in the direction it was headed
+        elastic:       the turtle will be deflected away from the wall at
+                       the appropriate angle of reflection and continue
+                       travelling the remaining distance
+        periodic:      the boundary acts like a portal, with the turtle
+                       transported to the opposite boundary and all relative
+                       motion proceeding unchanged
+
+    default color palette:
+
+        0=white         1=lt gray      2=med gray      3=dark gray
+        5=red           6=green        7=blue          8=yellow
+        9=purple       10=teal        11=med red      12=med green
+       13=med blue     14=med yellow  15=med purple   16=med teal
+```

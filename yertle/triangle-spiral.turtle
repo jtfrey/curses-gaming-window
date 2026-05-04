@@ -49,5 +49,6 @@ turn-deg 120.0
 color++
 move 0.10
 pause
-prop-contracting-curve-deg 0.4 -925.0 0.05
+prop-contracting-curve-deg 0.3 -720.0 0.05
+#curve-deg 0.4 -345.0
 pause
