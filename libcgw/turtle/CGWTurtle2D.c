@@ -1560,6 +1560,19 @@ CGWTurtleActionMoveTo(
 
 //
 
+/*
+    If while drawing the curve the turtle encounters an edge that is NOT periodic,
+    the turtle must respond by finishing its movement under the edge constraint.
+    The essential bit of information is how much further the turtle would have moved
+    had it not encountered the edge.
+    
+    For CGWTurtleActionCurve(), this is pretty straightforward:  however much angular
+    arc 𝜑 remains to be traversed with the fixed radius, r, the distance is s = r 𝜑.
+    The __CGWTurtleEmitLineWithBoundsChecks() function returns a normalized direction
+    vector, which can be multiplied by s and added to the last-drawn position to get
+    the new linear endpoint of turtle motion.
+ */
+
 void
 CGWTurtleActionCurve(
     CGWTurtleRef    Yertle,
@@ -1675,9 +1688,68 @@ CGWTurtleActionCurve(
     CGWTurtleStateSetAngle(Yertle, theta_t);
 }
    
-
 //
 
+/*
+    The CGWTurtleActionCurve() function benefitted from having a fixed radius, r,
+    as the turtle moves through the circular path.  The CGWTurtleActionCurveAndContract()
+    alters the radius as the turtle moves, so the remaining distance is not so easily
+    calculated.
+    
+    # Contraction NOT proportional to r
+    
+    In this case, the radius at any angle 𝜑 is the function:
+    
+        r(𝜑) = r_0 - 𝜌(𝜑_0 - 𝜑)
+    
+    where r_0 and 𝜑_0 are the starting radius and angle of arc the turtle must move
+    through and 𝜌 is the contraction factor.  The distance travelled is
+    
+        s = ∫ r(𝜑) d𝜑 = ∫ [r_0 - 𝜌(𝜑_0 - 𝜑)] d𝜑
+                      = r_0 𝜑 - 𝜌 (𝜑_0 𝜑 - ½ 𝜑^2) + C
+    
+    Given that the endpoint of circular motion was to be 𝜑=0, and the starting point
+    was at 𝜑=𝜑_0 (corresponding with r_0), the definite integral is
+    
+        s = r_0 𝜑_0 - 𝜌 (𝜑_0^2 - ½ 𝜑_0^2)
+          = r_0 𝜑_0 - ½ 𝜌 𝜑_0^2
+    
+    # Contraction proportional to r
+    
+    In this case, the radius is iteratively decreased as a fraction of its current
+    value.  If the contraction constant, 𝜌, is defined as the radius' having to
+    shrink by that value for 1 radian of rotation, then:
+    
+        r(𝜑=0) = r_0
+        r(𝜑=1) = (1 - 𝜌) r(𝜑=0)
+               = (1 - 𝜌) r_0
+    
+    Moving through another 1 radian of arc, the radius must have shrunk by the same
+    fraction relative to r(𝜑=1):
+    
+        r(𝜑=2) = (1 - 𝜌) r(𝜑=1)
+               = (1 - 𝜌) (1 - 𝜌) r_0
+               = (1 - 𝜌)^𝜑 r_0
+    
+    This is an exponential relationship between the radius, r, and the angle of arc,
+    𝜑.  This prompts the integral:
+    
+        s = ∫ r(𝜑) d𝜑 = ∫ (1 - 𝜌)^𝜑 r_0 d𝜑
+                      = r_0 ∫ (1 - 𝜌)^𝜑 d𝜑       let a = (1 - 𝜌)
+                      = r_0 ∫ a^𝜑 d𝜑
+                      = r_0 (1/ln a) a^𝜑 + C
+                      = r_0 (1 - 𝜌)^𝜑 / ln(1 - 𝜌) + C
+    
+    Given that the endpoint of circular motion was to be 𝜑=0, and the starting point
+    was at 𝜑=𝜑_0 (corresponding with r_0), the definite integral is
+    
+        s = r_0 [(1 - 𝜌)^𝜑_0 / ln(1 - 𝜌) - 1 / ln(1 - 𝜌)]
+          = r_0 / ln(1 - 𝜌) [(1 - 𝜌)^𝜑_0 - 1]
+    
+    If there is no contraction (𝜌=0) or the contraction is unity (𝜌=1) the formula
+    is ill-defined.
+ */
+ 
 void
 CGWTurtleActionCurveAndContract(
     CGWTurtleRef    Yertle,
